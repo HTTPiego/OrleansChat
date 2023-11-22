@@ -5,11 +5,11 @@ VisualStudioVersion = 17.8.34309.116
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Silo", "Silo\Silo.csproj", "{F675CB1D-4007-4FF9-8FE7-16C2C38EBA79}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client", "Client\Client.csproj", "{98D38A11-701F-467F-965C-CEADE86B8C9A}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GrainInterfaces", "GrainInterfaces\GrainInterfaces.csproj", "{8D8ECE85-3991-4BFB-AD09-25B61707E41C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Grains", "Grains\Grains.csproj", "{0E37A30C-99E1-445F-98EC-C4A3BBEE0C4E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApp", "WebApp\WebApp.csproj", "{A785D70D-C96A-4DAF-A2A6-E9A2C95F368A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,10 +21,6 @@ Global
 		{F675CB1D-4007-4FF9-8FE7-16C2C38EBA79}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F675CB1D-4007-4FF9-8FE7-16C2C38EBA79}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F675CB1D-4007-4FF9-8FE7-16C2C38EBA79}.Release|Any CPU.Build.0 = Release|Any CPU
-		{98D38A11-701F-467F-965C-CEADE86B8C9A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{98D38A11-701F-467F-965C-CEADE86B8C9A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{98D38A11-701F-467F-965C-CEADE86B8C9A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{98D38A11-701F-467F-965C-CEADE86B8C9A}.Release|Any CPU.Build.0 = Release|Any CPU
 		{8D8ECE85-3991-4BFB-AD09-25B61707E41C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{8D8ECE85-3991-4BFB-AD09-25B61707E41C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8D8ECE85-3991-4BFB-AD09-25B61707E41C}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -33,6 +29,10 @@ Global
 		{0E37A30C-99E1-445F-98EC-C4A3BBEE0C4E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0E37A30C-99E1-445F-98EC-C4A3BBEE0C4E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0E37A30C-99E1-445F-98EC-C4A3BBEE0C4E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A785D70D-C96A-4DAF-A2A6-E9A2C95F368A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A785D70D-C96A-4DAF-A2A6-E9A2C95F368A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A785D70D-C96A-4DAF-A2A6-E9A2C95F368A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A785D70D-C96A-4DAF-A2A6-E9A2C95F368A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
