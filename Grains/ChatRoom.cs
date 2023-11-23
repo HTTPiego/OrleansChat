@@ -62,19 +62,20 @@ namespace Grains
             return Task.FromResult(_messages);
         }
 
-        public Task addUser(IUser user)
+        public Task addUser(IUser whoAdds, IUser user)
         {
             if (user == null || _users.Contains(user))
             {
-                return Task.CompletedTask; //exception
+                return Task.CompletedTask; //exception  
             }
             _users.Add(user);
             Subscribe(user);
-            _observers.Notify(observer => observer.ReceiveNotificationFrom("You have been added to new chat!", this));
+            _observers.Notify(observer => observer.ReceiveNotificationFrom("You have been added to new chat!", this),
+                                            observer => !whoAdds.Equals(observer));
             return Task.CompletedTask;
         }
 
-        public Task removeUser(IUser user)
+        public Task removeUser(IUser whoAdds, IUser user)
         {
             if (user == null || !_users.Contains(user))
             {
@@ -83,7 +84,8 @@ namespace Grains
             _users.Remove(user);
             Unsubscribe(user);
             //TODO: handle user permission 
-            _observers.Notify(observer => observer.ReceiveNotificationFrom("You have been added to new chat!", this));
+            _observers.Notify(observer => observer.ReceiveNotificationFrom("You have been added to new chat!", this),
+                                            observer => !whoAdds.Equals(observer));
             return Task.CompletedTask;
         }
     }

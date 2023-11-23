@@ -10,8 +10,9 @@
 
         Task<List<string>> getMessages();
 
-        Task addUser(IUser user);
+        Task addUser(IUser whoAdds, IUser user);
 
-        Task removeUser(IUser user);
+        Task removeUser(IUser whoAdds, IUser user);
+
     }
 }
