@@ -85,7 +85,7 @@ namespace Grains
             Unsubscribe(user);
             //TODO: handle user permission 
             _observers.Notify(observer => observer.ReceiveNotificationFrom("You have been added to new chat!", this),
-                                            observer => !whoAdds.Equals(observer));
+                                            observer => !whoRemoves.Equals(observer));
             return Task.CompletedTask;
         }
     }
