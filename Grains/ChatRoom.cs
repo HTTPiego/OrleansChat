@@ -75,7 +75,7 @@ namespace Grains
             return Task.CompletedTask;
         }
 
-        public Task removeUser(IUser whoAdds, IUser user)
+        public Task removeUser(IUser whoRemoves, IUser user)
         {
             if (user == null || !_users.Contains(user))
             {

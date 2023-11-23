@@ -12,7 +12,7 @@
 
         Task addUser(IUser whoAdds, IUser user);
 
-        Task removeUser(IUser whoAdds, IUser user);
+        Task removeUser(IUser whoRemoves, IUser user);
 
     }
 }

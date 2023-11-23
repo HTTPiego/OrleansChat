@@ -28,17 +28,17 @@ namespace Grains
             IChatRoom chat = grainFactory.GetGrain<IChatRoom>(Guid.NewGuid());
             foreach (var member in members)
             {
-                chat.addUser(member);
+                chat.addUser(groupCreator, member);
             }
-            chat.addUser(groupCreator);
+            chat.addUser(groupCreator, groupCreator);
             return Task.FromResult(chat);
         }
 
         public Task<IChatRoom> InitializeChat(IUser whoStartedTheChat, IUser friend, IGrainFactory grainFactory)
         {
             IChatRoom chat = grainFactory.GetGrain<IChatRoom>(Guid.NewGuid());
-            chat.addUser(friend);
-            chat.addUser(whoStartedTheChat);
+            chat.addUser(whoStartedTheChat, friend);
+            chat.addUser(whoStartedTheChat, whoStartedTheChat);
             return Task.FromResult(chat);
         }
 
@@ -48,7 +48,7 @@ namespace Grains
             {
                 return Task.CompletedTask; //exception
             }
-            chat.removeUser(this); //TODO: handle user permissions
+            chat.removeUser(this, this); //TODO: handle user permissions
             _chatRooms.Remove(chat);
             return Task.CompletedTask;
         }
