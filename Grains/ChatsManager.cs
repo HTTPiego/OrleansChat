@@ -10,22 +10,21 @@ namespace Grains
 
         private List<string> _chatNotifications = new List<string>();
 
-        public Task<IGroupChatRoom> CreateGroupChat(IUser chatsManagerOwner, List<IUser> members, IGrainFactory grainFactory)
+        public Task<IGroupChatRoom> CreateGroupChat(IUser chatsManagerOwner, List<IUser> members)
         {
-            IGroupChatRoom chat = grainFactory.GetGrain<IGroupChatRoom>(Guid.NewGuid());
-            foreach (var member in members)
+            IGroupChatRoom chat = GrainFactory.GetGrain<IGroupChatRoom>(Guid.NewGuid());
+            foreach (var member in members) 
             {
                 chat.addUser(chatsManagerOwner, member);
             }
             chat.addUser(chatsManagerOwner, chatsManagerOwner);
-            
             return Task.FromResult(chat);
         }
 
-        public Task<IDirectChatRoom> InitializeDirectChat(IUser chatsManagerOwner, IUser friend, IGrainFactory grainFactory)
+        public Task<IDirectChatRoom> InitializeDirectChat(IUser chatsManagerOwner, IUser friend)
         {
-            IDirectChatRoom chat = grainFactory.GetGrain<IDirectChatRoom>(Guid.NewGuid());
-            chat.addUser(chatsManagerOwner, friend);
+            IDirectChatRoom chat = GrainFactory.GetGrain<IDirectChatRoom>(Guid.NewGuid());
+            chat.addUser(chatsManagerOwner, friend);    
             chat.addUser(chatsManagerOwner, chatsManagerOwner);
             _directs.Add(chat);
             return Task.FromResult(chat);
@@ -35,9 +34,9 @@ namespace Grains
         {
             if (!_directs.Contains(chat))
             {
-                return Task.CompletedTask; //exception
+                return Task.FromException(new ArgumentException());
             }
-            chat.removeUser(chatsManagerOwner, chatsManagerOwner); //TODO: handle user permissions
+            chat.removeUser(chatsManagerOwner, chatsManagerOwner);
             _groups.Remove(chat);
             return Task.CompletedTask;
         }
@@ -61,18 +60,18 @@ namespace Grains
         {
             if (!_directs.Contains(groupChat))
             {
-                _directs.Add(groupChat);
+                _groups.Add(groupChat);
             }
             _chatNotifications.Add(notification);
             return Task.CompletedTask;
         }
 
-        public Task updateGroupsAfterRemoval(IGroupChatRoom groupChat, string notification)
+        /*public Task updateGroupsAfterRemoval(IGroupChatRoom groupChat, string notification)
         {
             _chatNotifications.Add(notification);
             _groups.Remove(groupChat);
             return Task.CompletedTask;
-        }
+        }*/
 
     }
 }

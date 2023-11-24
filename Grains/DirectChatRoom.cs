@@ -9,7 +9,6 @@ namespace Grains
     public class DirectChatRoom : Grain, IDirectChatRoom
     {
         private readonly ObserverManager<IChatNotificationsHandler> _chatNotificationsHandler;
-        //private IChatNotificationsHandler _chatNotificationsHandler;
         private List<IUser> _users = new List<IUser>();
         private List<string> _messages = new List<string>();
 
@@ -30,7 +29,7 @@ namespace Grains
         {
             if (message == String.Empty)
             {
-                return Task.CompletedTask; //exception
+                return Task.FromException(new ArgumentException());
             }
             _messages.Add(message);
             _chatNotificationsHandler.Notify(chatNotificationsHandler => 
@@ -62,12 +61,12 @@ namespace Grains
         {
             if (user == null || _users.Contains(user))
             {
-                return; //exception  
+                throw new ArgumentException();
             }
             _users.Add(user);
             await _chatNotificationsHandler.First().Subscribe(user.GetChatsManager().Result);
-            await _chatNotificationsHandler.Notify(observer => observer.HandleNotificationFrom(this, "New message from " + whoAdds.GetUserNickname()),
-                                                    observer => !whoAdds.Equals(user));
+            await _chatNotificationsHandler.Notify(chatNotificationsHandler => 
+                                                    chatNotificationsHandler.HandleNotificationFrom(this, "New message from " + whoAdds.GetUserNickname(), whoAdds));    
             return;
         }
 

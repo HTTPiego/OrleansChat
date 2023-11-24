@@ -8,7 +8,6 @@ namespace Grains
     public class GroupChatRoom : Grain, IGroupChatRoom
     {
         private readonly ObserverManager<IChatNotificationsHandler> _chatNotificationsHandler;
-        //private IChatNotificationsHandler _chatNotificationsHandler;
         private IUser _groupCreator;
         private List<IUser> _admins = new List<IUser>();
         private List<IUser> _members = new List<IUser>();
@@ -46,7 +45,7 @@ namespace Grains
         {
             if (message == String.Empty)
             {
-                return Task.CompletedTask; //exception
+                return Task.FromException(new Exception());
             }
             _messages.Add(message);
             _chatNotificationsHandler.Notify(chatNotificationsHandler => 
@@ -63,12 +62,12 @@ namespace Grains
         {
             if (newMember == null || _members.Contains(newMember))
             {
-                return; //exception  
+                throw new ArgumentException();
             }
             _members.Add(newMember);
             await _chatNotificationsHandler.First().Subscribe(newMember.GetChatsManager().Result);
-            await _chatNotificationsHandler.Notify(observer => observer.HandleNotificationFrom(this, "You have been added to new group by " + whoAdds.GetUserNickname(), whoAdds),
-                                                    observer => !whoAdds.Equals(newMember));
+            await _chatNotificationsHandler.Notify(chatNotificationsHandler => chatNotificationsHandler
+                                                                                .HandleNotificationFrom(this, whoAdds.GetUserNickname() + "added " + newMember.GetUserNickname(), whoAdds));
             return;
         }
 
@@ -76,60 +75,54 @@ namespace Grains
         {
             if (member == null || !_members.Contains(member))
             {
-                return; //exception  
+                throw new ArgumentException();
             }
             _members.Remove(member);
+            await _chatNotificationsHandler.Notify(chatNotificationsHandler => chatNotificationsHandler
+                                                                                .HandleNotificationFrom(this, whoRemoves.GetUserNickname() + "removed " + member.GetUserNickname(), whoRemoves));
             await _chatNotificationsHandler.First().Unsubscribe(member.GetChatsManager().Result);
-            await _chatNotificationsHandler.Notify(observer => observer.HandleNotificationFrom(this, "You have been removed by " + whoRemoves.GetUserNickname(), whoRemoves),
-                                                    observer => !whoRemoves.Equals(member));
             return;
         }
 
-        public async Task setGroupCreator(IUser groupCreator)
+        public Task setGroupCreator(IUser groupCreator)
         {
             // groupCreator == null
             if (_groupCreator != null)
             {
-                return; //error
+                return Task.FromException(new ArgumentException());
             }
             if (!_members.Contains(groupCreator))
             {
-                await addUser(groupCreator, groupCreator);
+                return Task.FromException(new ArgumentException());
             }
             _groupCreator = groupCreator;
-            throw new NotImplementedException();
+            return Task.CompletedTask;
         }
 
-        public async Task addAdmin(IUser whoAdds, IUser newAdmin)
+        public Task addAdmin(IUser whoAdds, IUser newAdmin)
         {
             // newAdmin == null
             if (!whoAdds.Equals(_groupCreator) 
-                || !_admins.Contains(whoAdds) 
-                || !whoAdds.Equals(_groupCreator))
+                || !_admins.Contains(whoAdds))
             {
-                return; //exception  
+                return Task.FromException(new ArgumentException());
             }
             if (!_members.Contains(newAdmin))
             {
-                await addUser(whoAdds, newAdmin);
-            }
-            if (_members.Contains(newAdmin))
-            {
-                return; //exception  
+                return Task.FromException(new ArgumentException());
             }
             _admins.Add(newAdmin);
-            return;
+            return Task.CompletedTask;
         }
 
         public Task removeAdmin(IUser whoRemoves, IUser admin)
         {
             // newAdmin == null
             if (!whoRemoves.Equals(_groupCreator)
-                || !_admins.Contains(whoRemoves)
-                || !whoRemoves.Equals(_groupCreator))
+                || !_admins.Contains(whoRemoves))
             if (!_members.Contains(admin))
             {
-               return Task.CompletedTask;
+                return Task.FromException(new ArgumentException());
             }
             _admins.Remove(admin);
             return Task.CompletedTask;

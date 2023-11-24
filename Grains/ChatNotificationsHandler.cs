@@ -6,59 +6,59 @@ namespace Grains
 {
     public class ChatNotificationsHandler : Grain, IChatNotificationsHandler
     {
-        private readonly ObserverManager<IChatsManager> _observers;
+        private readonly ObserverManager<IChatsManager> _chatsManagers;
 
         //TODO: handle timer 
         public ChatNotificationsHandler(ILogger<IChatsManager> logger)
         {
-            _observers = new ObserverManager<IChatsManager>(TimeSpan.FromMinutes(5), logger);
+            _chatsManagers = new ObserverManager<IChatsManager>(TimeSpan.FromMinutes(5), logger);
         }
 
         public Task<ObserverManager<IChatsManager>> GetChatsManagers()
         {
-            return Task.FromResult(_observers);
+            return Task.FromResult(_chatsManagers);
         }
 
         public Task Subscribe(IChatsManager chatsManager)
         {
             // userNotifier == null
-            if (_observers.Contains(chatsManager))
+            if (_chatsManagers.Contains(chatsManager))
             {
                 return Task.CompletedTask; //exception
             }
-            _observers.Subscribe(chatsManager, chatsManager);
+            _chatsManagers.Subscribe(chatsManager, chatsManager);
             return Task.CompletedTask;
         }
 
         public Task Unsubscribe(IChatsManager chatsManager)
         {
             // userNotifier == null
-            if (!_observers.Contains(chatsManager))
+            if (!_chatsManagers.Contains(chatsManager))
             {
                 return Task.CompletedTask; //exception
             }
-            _observers.Subscribe(chatsManager, chatsManager);
+            _chatsManagers.Subscribe(chatsManager, chatsManager);
             return Task.CompletedTask;
         }
 
-        public Task HandleRemovalFrom(IGroupChatRoom groupChat, string notification, IUser whoRemoved)
+        /*public Task HandleRemovalFrom(IGroupChatRoom groupChat, string notification, IUser whoRemoved)
         {
-            _observers.Notify(observer => observer.updateGroupsAfterRemoval(groupChat, notification),
-                                observer => !observer.Equals(whoRemoved.GetChatsManager().Result));
+            _chatsManagers.Notify(chatManager => chatManager.updateGroupsAfterRemoval(groupChat, notification),
+                                    chatManager => !chatManager.Equals(whoRemoved.GetChatsManager().Result));
             return Task.FromResult(groupChat);
-        }
+        }*/
 
         public Task HandleNotificationFrom(IGroupChatRoom groupChat, string notification, IUser messageAuthor)
         {
-            _observers.Notify(observer => observer.ReceiveNotificationFrom(groupChat, notification),
-                                observer => !observer.Equals(messageAuthor.GetChatsManager().Result));
+            _chatsManagers.Notify(chatManager => chatManager.ReceiveNotificationFrom(groupChat, notification),
+                                    chatManager => !chatManager.Equals(messageAuthor.GetChatsManager().Result));
             return Task.FromResult(groupChat);
         }
 
         public Task HandleNotificationFrom(IDirectChatRoom directChat, string notification, IUser messageAuthor)
         {
-            _observers.Notify(observer => observer.ReceiveNotificationFrom(directChat, notification),
-                                observer => !observer.Equals(messageAuthor.GetChatsManager().Result));
+            _chatsManagers.Notify(chatManager => chatManager.ReceiveNotificationFrom(directChat, notification),
+                                    chatManager => !chatManager.Equals(messageAuthor.GetChatsManager().Result));
             return Task.FromResult(directChat);
         }
 

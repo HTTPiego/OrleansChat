@@ -30,16 +30,5 @@ namespace Grains
             return Task.FromResult(_chatsManager);
         }
 
-        /*//TODO: ???
-        public async Task<IUserNotifier> GetUserNotifier()
-        {
-            return await Task.FromResult(_userNotifier);
-        }*/
-
-        public Task ReceiveNotification(IChatNotificationsHandler userNotifier, string notification)
-        {
-            throw new NotImplementedException();
-        }
-
     }
 }

@@ -20,7 +20,3 @@ namespace GrainInterfaces
 
     }
 }
-
-//Task Subscribe(IUser user);
-
-//Task Unsubscribe(IUser user);
