@@ -1,71 +1,45 @@
 ﻿using GrainInterfaces;
+using System.Threading;
 
 namespace Grains
 {
-    public class User : IUser
+    public class User : Grain, IUser
     {
-
-        //Notifier UserNotifier ...
 
         private string _userNickname;
 
-        private List<IChatRoom> _chatRooms;
+        private IChatsManager _chatsManager;
 
-        //public GrainFactory grainFactory;
+        public override Task OnActivateAsync(CancellationToken ct)
+        {
+            _chatsManager = GrainFactory.GetGrain<IChatsManager>(Guid.NewGuid());
+            return base.OnActivateAsync(ct);
+        }
 
-        /*public User(string nickname)
+        public Task SetUserNickname(string nickname)
         {
             _userNickname = nickname;
-        }*/
-
+            return Task.CompletedTask;
+        }
         public Task<string> GetUserNickname()
         {
-            return Task.FromResult(this._userNickname);
+            return Task.FromResult(_userNickname);
+        }
+        public Task<IChatsManager> GetChatsManager()
+        {
+            return Task.FromResult(_chatsManager);
         }
 
-        public Task<IChatRoom> CreateGroupChat(IUser groupCreator, List<IUser> members, IGrainFactory grainFactory)
+        /*//TODO: ???
+        public async Task<IUserNotifier> GetUserNotifier()
         {
-            IChatRoom chat = grainFactory.GetGrain<IChatRoom>(Guid.NewGuid());
-            foreach (var member in members)
-            {
-                chat.addUser(groupCreator, member);
-            }
-            chat.addUser(groupCreator, groupCreator);
-            return Task.FromResult(chat);
+            return await Task.FromResult(_userNotifier);
+        }*/
+
+        public Task ReceiveNotification(IChatNotificationsHandler userNotifier, string notification)
+        {
+            throw new NotImplementedException();
         }
 
-        public Task<IChatRoom> InitializeChat(IUser whoStartedTheChat, IUser friend, IGrainFactory grainFactory)
-        {
-            IChatRoom chat = grainFactory.GetGrain<IChatRoom>(Guid.NewGuid());
-            chat.addUser(whoStartedTheChat, friend);
-            chat.addUser(whoStartedTheChat, whoStartedTheChat);
-            return Task.FromResult(chat);
-        }
-
-        public Task LeaveGroupChat(IChatRoom chat)
-        {
-            if (!_chatRooms.Contains(chat))
-            {
-                return Task.CompletedTask; //exception
-            }
-            chat.removeUser(this, this); //TODO: handle user permissions
-            _chatRooms.Remove(chat);
-            return Task.CompletedTask;
-        }
-
-        public Task<List<string>> readMessages(IChatRoom chat)
-        {
-            return chat.getMessages();
-        }
-
-        public Task ReceiveNotificationFrom(string notification, IChatRoom chat)
-        {
-            Console.WriteLine(notification); //TODO: handle notification
-            if (!_chatRooms.Contains(chat))
-            {
-                _chatRooms.Add(chat);
-            }
-            return Task.CompletedTask;
-        }
     }
 }

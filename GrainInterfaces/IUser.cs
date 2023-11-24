@@ -1,16 +1,17 @@
 ﻿namespace GrainInterfaces
 {
-    public interface IUser : IGrainObserver, IGrainWithGuidKey
+    public interface IUser : IGrainWithGuidKey//, IGrainObserver
     {
+        Task SetUserNickname(string nickname);
         Task<string> GetUserNickname();
-        Task ReceiveNotificationFrom(string notification, IChatRoom chat);
+        Task<IChatsManager> GetChatsManager();
 
-        Task<List<string>> readMessages(IChatRoom chat);
+        //Task<IUserNotifier> GetUserNotifier();
+        Task ReceiveNotification(IChatNotificationsHandler userNotifier, string notification);
 
-        Task<IChatRoom> InitializeChat(IUser whoStartedTheChat, IUser friend, IGrainFactory grainFactory);
-        Task<IChatRoom> CreateGroupChat(IUser groupCreator, List<IUser> members, IGrainFactory grainFactory);
+        //ask<List<string>> readMessages(IChatRoom chat);
 
-        Task LeaveGroupChat(IChatRoom chat);
+        
 
     }
 }
