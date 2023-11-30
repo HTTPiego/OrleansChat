@@ -4,15 +4,22 @@ namespace Grains
 {
     public class ChatsManager : Grain, IChatsManager
     {
+        private readonly IGrainFactory _grainFactory;
+
         private List<IDirectChatRoom> _directs;
 
         private List<IGroupChatRoom> _groups;
 
         private List<string> _chatNotifications = new List<string>();
 
+        public ChatsManager(IGrainFactory grainFactory) 
+        {
+            _grainFactory = grainFactory;
+        }
+
         public Task<IGroupChatRoom> CreateGroupChat(IUser chatsManagerOwner, List<IUser> members)
         {
-            IGroupChatRoom chat = GrainFactory.GetGrain<IGroupChatRoom>(Guid.NewGuid());
+            IGroupChatRoom chat = _grainFactory.GetGrain<IGroupChatRoom>(Guid.NewGuid());
             foreach (var member in members) 
             {
                 chat.addUser(chatsManagerOwner, member);
@@ -23,7 +30,7 @@ namespace Grains
 
         public Task<IDirectChatRoom> InitializeDirectChat(IUser chatsManagerOwner, IUser friend)
         {
-            IDirectChatRoom chat = GrainFactory.GetGrain<IDirectChatRoom>(Guid.NewGuid());
+            IDirectChatRoom chat = _grainFactory.GetGrain<IDirectChatRoom>(Guid.NewGuid());
             chat.addUser(chatsManagerOwner, friend);    
             chat.addUser(chatsManagerOwner, chatsManagerOwner);
             _directs.Add(chat);
