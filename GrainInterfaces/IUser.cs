@@ -1,10 +1,14 @@
-﻿namespace GrainInterfaces
-{
-    public interface IUser : IGrainWithGuidKey//, IGrainObserver
-    {
-        Task SetUserNickname(string nickname);
-        Task<string> GetUserNickname();
-        Task<IChatsManager> GetChatsManager();
+﻿using Orleans.Streams;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
+namespace GrainInterfaces
+{
+    public interface IUser : IGrainWithStringKey, IAsyncObserver<string>
+    {
+        Task<Dictionary<Guid, Guid>> GetChatAndSubscriptionHandle();
     }
 }

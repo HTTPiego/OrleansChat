@@ -9,9 +9,9 @@ namespace GrainInterfaces
 {
     public interface IChatRoom : IGrainWithStringKey
     {
-        Task PostMessage(IUser_ author, string message);
+        Task PostMessage(IUser author, string message);
         Task<List<string>> GetMessages();
-        Task<StreamId> Add(IUser_ newMember);
-        Task<StreamId> Leave(IUser_ member);
+        Task<StreamId> Add(IUser newMember);
+        Task<StreamId> Leave(IUser member);
     }
 }
