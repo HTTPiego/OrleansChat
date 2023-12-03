@@ -8,7 +8,7 @@ namespace ChatSilo.Controllers
     [ApiController]
     public class ChatRoomsController : ControllerBase
     {
-
+        // TODO: to do
         private readonly IGrainFactory _grainFactory;
 
         public ChatRoomsController(IGrainFactory grainFactory)
