@@ -1,92 +1,107 @@
 ﻿using GrainInterfaces;
-using Microsoft.Extensions.Logging;
-using Orleans.Utilities;
-using System;
-
+using Orleans.Runtime;
+using Orleans.Streams;
 
 namespace Grains
 {
     public class ChatRoom : Grain, IChatRoom
     {
-        private readonly ObserverManager<IUser> _observers;
-        private List<IUser> _users = new List<IUser>();
-        private List<string> _messages = new List<string>();
+        private readonly List<IUser> _chatRoomMembers = new();
+        private readonly List<string> _messages = new();
+        private IAsyncStream<string> _stream = null!;
 
-        //TODO: handle timer 
-        public ChatRoom(ILogger<IChatRoom> logger)
+        public override Task OnActivateAsync(CancellationToken ct)
         {
-            _observers = new ObserverManager<IUser>(TimeSpan.FromMinutes(5), logger);
+            var streamProvider = this.GetStreamProvider("chat");
+            var guid = this.GetPrimaryKeyString();
+            var streamId = StreamId.Create(guid + "_stream", guid);
+            _stream = streamProvider.GetStream<string>(streamId);
+
+            return base.OnActivateAsync(ct);
         }
 
-        /*public override Task OnActivateAsync(CancellationToken cancellationToken)
+        public async Task PostMessage(IUser author, string message)
         {
-            return base.OnActivateAsync(cancellationToken);
-        }*/
-
-
-        private Task Subscribe(IUser user)
-        {
-            if (user == null || _observers.Contains(user))
+            if (author == null)
             {
-                return Task.CompletedTask; //exception
+                await Task.FromException(new ArgumentException("Author is invalid"));
             }
-            _observers.Subscribe(user, user);
-            return Task.CompletedTask;
-        }
-
-        private Task Unsubscribe(IUser user)
-        {
-            if (user == null || !_observers.Contains(user))
+            if (! _chatRoomMembers.Contains(author!))
             {
-                return Task.CompletedTask; //exception
+                await Task.FromException(new ArgumentException("This user is not a memeber of this chat"));
             }
-            _observers.Unsubscribe(user);
-            return Task.CompletedTask;
-        }
-
-        public Task PostMessage(string message, IUser messageAuthor)
-        {
-            if (message == String.Empty)
+            if (String.IsNullOrEmpty(message))
             {
-                return Task.CompletedTask; //exception
+                await Task.FromException(new ArgumentException("Invalid message"));
             }
             _messages.Add(message);
-            _observers.Notify(observer =>
-                                observer.ReceiveNotificationFrom("Message from " + messageAuthor.GetUserNickname(), this),
-                                observer => !observer.GetPrimaryKey().Equals(messageAuthor.GetPrimaryKey()));
-            return Task.CompletedTask;
+            await _stream.OnNextAsync(author.GetPrimaryKeyString() + " wrote: " + message);
+
+            return;
         }
 
-        public Task<List<string>> getMessages()
+        public async Task<List<string>> GetMessages()
         {
-            return Task.FromResult(_messages);
+            return await Task.FromResult(_messages);
         }
 
-        public Task addUser(IUser whoAdds, IUser user)
+        public async Task<StreamId> Add(IUser newMember)
         {
-            if (user == null || _users.Contains(user))
+            if (newMember == null)
             {
-                return Task.CompletedTask; //exception  
+                await Task.FromException(new ArgumentException("New member is invalid"));
             }
-            _users.Add(user);
-            Subscribe(user);
-            _observers.Notify(observer => observer.ReceiveNotificationFrom("You have been added to new chat!", this),
-                                            observer => !whoAdds.Equals(observer));
-            return Task.CompletedTask;
+            if (_chatRoomMembers.Contains(newMember!))
+            {
+                await Task.FromException(new ArgumentException("This user is already a memeber of this chat"));
+            }
+            _chatRoomMembers.Add(newMember!);
+            string notification = newMember.GetPrimaryKeyString() + " joined your \"" + this.GetPrimaryKeyString() + "\" chat!";
+            var sub = await _stream.SubscribeAsync(newMember!);
+            newMember!.GetChatAndSubscriptionHandle().Result.Add(this.GetPrimaryKey(), sub.HandleId);
+            await _stream.OnNextAsync(notification);
+            
+            return _stream.StreamId;
         }
 
-        public Task removeUser(IUser whoRemoves, IUser user)
+
+        public async Task<StreamId> Leave(IUser member)
         {
-            if (user == null || !_users.Contains(user))
+            if (member == null)
             {
-                return Task.CompletedTask; //exception
+                await Task.FromException(new ArgumentException("The member to be removed is invalid"));
             }
-            _users.Remove(user);
-            Unsubscribe(user);
-            //TODO: handle user permission 
-            _observers.Notify(observer => observer.ReceiveNotificationFrom("You have been added to new chat!", this),
-                                            observer => !whoRemoves.Equals(observer));
-            return Task.CompletedTask;
+            if (!_chatRoomMembers.Contains(member!))
+            {
+                await Task.FromException(new ArgumentException("This user is not a memeber of this chat"));
+            }
+            _chatRoomMembers.Remove(member!);
+            string notification = member.GetPrimaryKeyString() + " leaved your \"" + this.GetPrimaryKeyString() + "\" chat!";
+            await _stream.OnNextAsync(notification);
+            await Unsubscrive(member!);
+
+            return _stream.StreamId;
         }
+
+        private async Task Unsubscrive(IUser member)
+        {
+            var chatAndSubscriptionHandle = await member.GetChatAndSubscriptionHandle();
+            foreach (var pair in chatAndSubscriptionHandle)
+            {
+                var subGuid = pair.Value;
+                var subscriptionHandles = await _stream.GetAllSubscriptionHandles()
+                                                        .ContinueWith(allHandles => allHandles.Result.SkipWhile(handle => !handle.HandleId.Equals(subGuid)));
+                if (subscriptionHandles != null &&
+                    subscriptionHandles.Count() != 0)
+                {
+                    foreach (var subscriptionHandle in subscriptionHandles)
+                    {
+                        await subscriptionHandle.UnsubscribeAsync();
+                    }
+                }
+            }
+            return;
+        }
+
     }
 }

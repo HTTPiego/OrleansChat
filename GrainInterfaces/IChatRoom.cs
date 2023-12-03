@@ -1,18 +1,17 @@
-﻿namespace GrainInterfaces
+﻿using Orleans.Runtime;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace GrainInterfaces
 {
-    public interface IChatRoom : IGrainWithGuidKey
+    public interface IChatRoom : IGrainWithStringKey
     {
-        //Task Subscribe(IUser user);
-
-        //Task Unsubscribe(IUser user);
-
-        Task PostMessage(string message, IUser messageAuthor);
-
-        Task<List<string>> getMessages();
-
-        Task addUser(IUser whoAdds, IUser user);
-
-        Task removeUser(IUser whoRemoves, IUser user);
-
+        Task PostMessage(IUser author, string message);
+        Task<List<string>> GetMessages();
+        Task<StreamId> Add(IUser newMember);
+        Task<StreamId> Leave(IUser member);
     }
 }

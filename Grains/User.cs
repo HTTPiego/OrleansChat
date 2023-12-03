@@ -1,71 +1,57 @@
 ﻿using GrainInterfaces;
+using Orleans.Runtime;
+using Orleans.Streams;
 
 namespace Grains
 {
-    public class User : IUser
+    public class User : Grain, IUser
     {
+        private readonly Dictionary<Guid, Guid> _chatAndSubscriptionHandle = new();
+        private readonly List<string> _notifications = new();
 
-        //Notifier UserNotifier ...
-
-        private string _userNickname;
-
-        private List<IChatRoom> _chatRooms;
-
-        //public GrainFactory grainFactory;
-
-        /*public User(string nickname)
+        public async override Task OnActivateAsync(CancellationToken cancellationToken)
         {
-            _userNickname = nickname;
-        }*/
-
-        public Task<string> GetUserNickname()
-        {
-            return Task.FromResult(this._userNickname);
-        }
-
-        public Task<IChatRoom> CreateGroupChat(IUser groupCreator, List<IUser> members, IGrainFactory grainFactory)
-        {
-            IChatRoom chat = grainFactory.GetGrain<IChatRoom>(Guid.NewGuid());
-            foreach (var member in members)
+            foreach (var pair in _chatAndSubscriptionHandle)
             {
-                chat.addUser(groupCreator, member);
+                var chatGuid = pair.Key.ToString();
+                var subGuid = pair.Value;
+                var streamProvider = this.GetStreamProvider("chat");
+                var streamId = StreamId.Create(chatGuid + "_stream", chatGuid); 
+                var stream = streamProvider.GetStream<string>(streamId);
+                var subscriptionHandles = await stream.GetAllSubscriptionHandles()
+                                                        .ContinueWith(allHandles => allHandles.Result.SkipWhile(handle => !handle.HandleId.Equals(subGuid)));
+                if (subscriptionHandles != null &&
+                    subscriptionHandles.Count() != 0) //!subscriptionHandles.IsNullOrEmpty()
+                {
+                    foreach (var subscriptionHandle in subscriptionHandles) //subscriptionHandles.ForEach( async x => await x.ResumeAsync(OnNextAsync));
+                    {
+                        await subscriptionHandle.ResumeAsync(OnNextAsync);
+                    }
+                }
             }
-            chat.addUser(groupCreator, groupCreator);
-            return Task.FromResult(chat);
         }
 
-        public Task<IChatRoom> InitializeChat(IUser whoStartedTheChat, IUser friend, IGrainFactory grainFactory)
+        public async Task<Dictionary<Guid, Guid>> GetChatAndSubscriptionHandle()
         {
-            IChatRoom chat = grainFactory.GetGrain<IChatRoom>(Guid.NewGuid());
-            chat.addUser(whoStartedTheChat, friend);
-            chat.addUser(whoStartedTheChat, whoStartedTheChat);
-            return Task.FromResult(chat);
+            return await Task.FromResult(_chatAndSubscriptionHandle);
         }
 
-        public Task LeaveGroupChat(IChatRoom chat)
+        public Task OnCompletedAsync()
         {
-            if (!_chatRooms.Contains(chat))
-            {
-                return Task.CompletedTask; //exception
-            }
-            chat.removeUser(this, this); //TODO: handle user permissions
-            _chatRooms.Remove(chat);
             return Task.CompletedTask;
         }
 
-        public Task<List<string>> readMessages(IChatRoom chat)
+        public Task OnErrorAsync(Exception ex)
         {
-            return chat.getMessages();
-        }
-
-        public Task ReceiveNotificationFrom(string notification, IChatRoom chat)
-        {
-            Console.WriteLine(notification); //TODO: handle notification
-            if (!_chatRooms.Contains(chat))
-            {
-                _chatRooms.Add(chat);
-            }
             return Task.CompletedTask;
         }
+
+        public Task OnNextAsync(string notification, StreamSequenceToken? token = null)
+        {
+            _notifications.Add(notification);
+            return Task.CompletedTask;
+        }
+
+
     }
 }

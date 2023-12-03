@@ -1,16 +1,14 @@
-﻿namespace GrainInterfaces
+﻿using Orleans.Streams;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace GrainInterfaces
 {
-    public interface IUser : IGrainObserver, IGrainWithGuidKey
+    public interface IUser : IGrainWithStringKey, IAsyncObserver<string>
     {
-        Task<string> GetUserNickname();
-        Task ReceiveNotificationFrom(string notification, IChatRoom chat);
-
-        Task<List<string>> readMessages(IChatRoom chat);
-
-        Task<IChatRoom> InitializeChat(IUser whoStartedTheChat, IUser friend, IGrainFactory grainFactory);
-        Task<IChatRoom> CreateGroupChat(IUser groupCreator, List<IUser> members, IGrainFactory grainFactory);
-
-        Task LeaveGroupChat(IChatRoom chat);
-
+        Task<Dictionary<Guid, Guid>> GetChatAndSubscriptionHandle();
     }
 }
