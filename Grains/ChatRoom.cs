@@ -6,13 +6,16 @@ using Orleans.Utilities;
 
 namespace Grains
 {
+    // IF we add the following attribute, the ChatRoom is automatically subscribed to the stream with namespace "ROOM"
+    // and GUID is the same as the ChatRoom GUID. So there is no need to save the stream
+    
+    [ImplicitStreamSubscription("ROOM")] 
     public class ChatRoom : Grain, IChatRoom
     {
         private readonly IGrainFactory _grainFactory;
         private readonly List<Guid> _chatRoomMembers = new();
         private readonly ObserverManager<IUserNotifier> _userNotifiersManager;
         private readonly List<string> _messages = new();
-        private StreamId _messageStreamId;
 
 
         public ChatRoom(IGrainFactory grainFactory, ILogger<IUserNotifier> logger)
@@ -26,14 +29,9 @@ namespace Grains
             if (_messageStreamId.Equals(null))
             {
                 var guid = this.GetPrimaryKeyString();
-                _messageStreamId = StreamId.Create(guid + "_messageStream", guid);
+                _messageStreamId = StreamId.Create(guid + "_messageStream", guid); // guid does not need to be appended to the stream namespace
                 var messageStream = RetriveStream(_messageStreamId);
                 await messageStream.SubscribeAsync(this);
-            }
-            else 
-            {
-                var subscriptionHandle = RetriveStream(_messageStreamId).GetAllSubscriptionHandles().Result.First();
-                await subscriptionHandle.ResumeAsync(OnNextAsync);
             }
             await base.OnActivateAsync(ct);
         }

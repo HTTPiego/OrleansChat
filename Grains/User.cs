@@ -2,13 +2,14 @@
 using Orleans.Runtime;
 using Orleans.Streams;
 
-
 namespace Grains
 {
     public class User : Grain, IUser
     {
         private readonly IGrainFactory _grainFactory;
-        private readonly List<StreamId> _chats = new(); // or Dictionary<Guid, StreamId> _chatsWithTheirStreams ?
+        private readonly List<Guid> _chats = new(); 
+        // or Dictionary<Guid, StreamId> _chatsWithTheirStreams ?  THIS does not need to store the Stream Ids, just the ChatRooms GUIDS cause they are the same
+        // 
         //private readonly Guid userNotifier; --> same of the owner user
         //private readonly Dictionary<Guid, Guid> _chatAndSubscriptionHandle = new();
 
@@ -49,18 +50,14 @@ namespace Grains
             return notifier.RetriveNotifications();
         }
 
-        public async Task SendMessage(IChatRoom chatRoom, string message)
+        public async Task SendMessage(Guid chatRoom, string message)
         {
-            //var chatStream = RetriveStream(chat);
-            foreach(var chatStreamId in _chats)
+            if (chatRoom in _chats)
             {
-                if (chatStreamId.Key.Equals(chatRoom.GetPrimaryKeyString()))
-                {
-                    var streamProvider = this.GetStreamProvider("chat");
-                    var chatStream = streamProvider.GetStream<string>(chatStreamId);
-                    await chatStream.OnNextAsync(message);
-                    await Task.CompletedTask;
-                }
+                var streamProvider = this.GetStreamProvider("chat");
+                var chatStream = streamProvider.GetStream<string>();
+                await chatStream.OnNextAsync(message);
+                await Task.CompletedTask;
             }
             await Task.FromException(new ArgumentException("User is not allowed to send messsage this chat or chat does not exist"));
         }
