@@ -1,17 +1,17 @@
-﻿using Orleans.Runtime;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Orleans.Streams;
 
 namespace GrainInterfaces
 {
-    public interface IChatRoom : IGrainWithStringKey
+    public struct MessageWithAuthor
     {
-        Task PostMessage(IUser author, string message);
+        public Guid author;
+        public string message;
+    }
+
+    public interface IChatRoom : IGrainWithStringKey, IAsyncObserver<MessageWithAuthor>
+    {
         Task<List<string>> GetMessages();
-        Task<StreamId> Add(IUser newMember);
-        Task<StreamId> Leave(IUser member);
+        Task Add(IUser newMember);
+        Task Leave(IUser member);
     }
 }

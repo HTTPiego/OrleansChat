@@ -1,26 +1,50 @@
 ﻿using GrainInterfaces;
+using Microsoft.Extensions.Logging;
 using Orleans.Runtime;
 using Orleans.Streams;
+using Orleans.Utilities;
 
 namespace Grains
 {
     public class ChatRoom : Grain, IChatRoom
     {
-        private readonly List<IUser> _chatRoomMembers = new();
+        private readonly IGrainFactory _grainFactory;
+        private readonly List<Guid> _chatRoomMembers = new();
+        private readonly ObserverManager<IUserNotifier> _userNotifiersManager;
         private readonly List<string> _messages = new();
-        private IAsyncStream<string> _stream = null!;
+        private StreamId _messageStreamId;
 
-        public override Task OnActivateAsync(CancellationToken ct)
+
+        public ChatRoom(IGrainFactory grainFactory, ILogger<IUserNotifier> logger)
         {
-            var streamProvider = this.GetStreamProvider("chat");
-            var guid = this.GetPrimaryKeyString();
-            var streamId = StreamId.Create(guid + "_stream", guid);
-            _stream = streamProvider.GetStream<string>(streamId);
-
-            return base.OnActivateAsync(ct);
+            _grainFactory = grainFactory;
+            _userNotifiersManager = new ObserverManager<IUserNotifier>(TimeSpan.FromMinutes(5), logger);
         }
 
-        public async Task PostMessage(IUser author, string message)
+        public override async Task OnActivateAsync(CancellationToken ct)
+        {
+            if (_messageStreamId.Equals(null))
+            {
+                var guid = this.GetPrimaryKeyString();
+                _messageStreamId = StreamId.Create(guid + "_messageStream", guid);
+                var messageStream = RetriveStream(_messageStreamId);
+                await messageStream.SubscribeAsync(this);
+            }
+            else 
+            {
+                var subscriptionHandle = RetriveStream(_messageStreamId).GetAllSubscriptionHandles().Result.First();
+                await subscriptionHandle.ResumeAsync(OnNextAsync);
+            }
+            await base.OnActivateAsync(ct);
+        }
+
+        private IAsyncStream<MessageWithAuthor> RetriveStream(StreamId messageStreamId)
+        {
+            var streamProvider = this.GetStreamProvider("chat");
+            return streamProvider.GetStream<MessageWithAuthor>(messageStreamId);
+        }
+
+        /*public async Task PostMessage(IUser author, string message)
         {
             if (author == null)
             {
@@ -38,52 +62,66 @@ namespace Grains
             await _stream.OnNextAsync(author.GetPrimaryKeyString() + " wrote: " + message);
 
             return;
-        }
+        }*/
 
         public async Task<List<string>> GetMessages()
         {
             return await Task.FromResult(_messages);
         }
 
-        public async Task<StreamId> Add(IUser newMember)
+        public async Task Add(IUser newMember)
         {
             if (newMember == null)
             {
                 await Task.FromException(new ArgumentException("New member is invalid"));
             }
-            if (_chatRoomMembers.Contains(newMember!))
+            if (_chatRoomMembers.Contains(newMember!.GetPrimaryKey()))
             {
                 await Task.FromException(new ArgumentException("This user is already a memeber of this chat"));
             }
-            _chatRoomMembers.Add(newMember!);
-            string notification = newMember.GetPrimaryKeyString() + " joined your \"" + this.GetPrimaryKeyString() + "\" chat!";
+            _chatRoomMembers.Add(newMember!.GetPrimaryKey());
+            var notification = newMember.GetPrimaryKeyString() + " joined your \"" + this.GetPrimaryKeyString() + "\" chat!";
+            await _userNotifiersManager.Notify(notifier => notifier.ReceiveNotification(notification));
+            var userNotifier = _grainFactory.GetGrain<IUserNotifier>(newMember.GetPrimaryKeyString());
+            _userNotifiersManager.Subscribe(userNotifier, userNotifier);
+
+            await Task.CompletedTask;
+
+            /*
             var sub = await _stream.SubscribeAsync(newMember!);
             newMember!.GetChatAndSubscriptionHandle().Result.Add(this.GetPrimaryKey(), sub.HandleId);
             await _stream.OnNextAsync(notification);
             
-            return _stream.StreamId;
+            return _stream.StreamId;*/
         }
 
 
-        public async Task<StreamId> Leave(IUser member)
+        public async Task Leave(IUser member)
         {
             if (member == null)
             {
                 await Task.FromException(new ArgumentException("The member to be removed is invalid"));
             }
-            if (!_chatRoomMembers.Contains(member!))
+            if (!_chatRoomMembers.Contains(member!.GetPrimaryKey()))
             {
                 await Task.FromException(new ArgumentException("This user is not a memeber of this chat"));
             }
-            _chatRoomMembers.Remove(member!);
-            string notification = member.GetPrimaryKeyString() + " leaved your \"" + this.GetPrimaryKeyString() + "\" chat!";
+            _chatRoomMembers.Remove(member!.GetPrimaryKey());
+            var userNotifier = _grainFactory.GetGrain<IUserNotifier>(member.GetPrimaryKeyString());
+            _userNotifiersManager.Unsubscribe(userNotifier);
+            var notification = member.GetPrimaryKeyString() + " leaved your \"" + this.GetPrimaryKeyString() + "\" chat!";
+            await _userNotifiersManager.Notify(notifier => notifier.ReceiveNotification(notification));
+
+            await Task.CompletedTask;
+
+            /*string notification = member.GetPrimaryKeyString() + " leaved your \"" + this.GetPrimaryKeyString() + "\" chat!";
             await _stream.OnNextAsync(notification);
             await Unsubscrive(member!);
 
-            return _stream.StreamId;
+            return _stream.StreamId;*/
         }
 
-        private async Task Unsubscrive(IUser member)
+        /*private async Task Unsubscrive(IUser member)
         {
             var chatAndSubscriptionHandle = await member.GetChatAndSubscriptionHandle();
             foreach (var pair in chatAndSubscriptionHandle)
@@ -101,7 +139,26 @@ namespace Grains
                 }
             }
             return;
+        }*/
+
+
+        public Task OnCompletedAsync()
+        {
+            return Task.CompletedTask;
         }
 
+        public Task OnErrorAsync(Exception ex)
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task OnNextAsync(MessageWithAuthor item, StreamSequenceToken? token = null)
+        {
+            _messages.Add(item.message);
+            var notification = "New message!";
+            _userNotifiersManager.Notify(notifier => notifier.ReceiveNotification(notification),
+                                            notifier => ! notifier.GetPrimaryKey().Equals(item.author)); //if user notifier is not that one of the author
+            return Task.CompletedTask;
+        }
     }
 }

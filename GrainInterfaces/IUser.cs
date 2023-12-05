@@ -1,14 +1,10 @@
-﻿using Orleans.Streams;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Orleans.Runtime;
 
 namespace GrainInterfaces
 {
-    public interface IUser : IGrainWithStringKey, IAsyncObserver<string>
+    public interface IUser : IGrainWithStringKey
     {
-        Task<Dictionary<Guid, Guid>> GetChatAndSubscriptionHandle();
+        Task SendMessage(IChatRoom chatRoom, string message);
+        Task<List<StreamId>> GetChats();
     }
 }
