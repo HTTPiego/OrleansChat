@@ -12,113 +12,95 @@ namespace Grains
     [ImplicitStreamSubscription("ROOM")] 
     public class ChatRoom : Grain, IChatRoom
     {
+        private readonly ILogger<ChatRoom> _logger;
         private readonly IGrainFactory _grainFactory;
-        private readonly List<Guid> _chatRoomMembers = new();
+        private readonly List<string> _chatRoomMembers = new();
         private readonly ObserverManager<IUserNotifier> _userNotifiersManager;
         private readonly List<string> _messages = new();
+        private bool _isGroup = false;
 
-
-        public ChatRoom(IGrainFactory grainFactory, ILogger<IUserNotifier> logger)
+        public ChatRoom(IGrainFactory grainFactory, ILogger<IUserNotifier> logger, ILogger<ChatRoom> chatroomLogger)
         {
+            _logger = chatroomLogger;
             _grainFactory = grainFactory;
             _userNotifiersManager = new ObserverManager<IUserNotifier>(TimeSpan.FromMinutes(5), logger);
         }
 
-        public override async Task OnActivateAsync(CancellationToken ct)
+        public async Task<List<string>> GetMembers()
         {
-            if (_messageStreamId.Equals(null))
-            {
-                var guid = this.GetPrimaryKeyString();
-                _messageStreamId = StreamId.Create(guid + "_messageStream", guid); // guid does not need to be appended to the stream namespace
-                var messageStream = RetriveStream(_messageStreamId);
-                await messageStream.SubscribeAsync(this);
-            }
-            await base.OnActivateAsync(ct);
+            return await Task.FromResult(_chatRoomMembers);
         }
-
-        private IAsyncStream<MessageWithAuthor> RetriveStream(StreamId messageStreamId)
-        {
-            var streamProvider = this.GetStreamProvider("chat");
-            return streamProvider.GetStream<MessageWithAuthor>(messageStreamId);
-        }
-
-        /*public async Task PostMessage(IUser author, string message)
-        {
-            if (author == null)
-            {
-                await Task.FromException(new ArgumentException("Author is invalid"));
-            }
-            if (! _chatRoomMembers.Contains(author!))
-            {
-                await Task.FromException(new ArgumentException("This user is not a memeber of this chat"));
-            }
-            if (String.IsNullOrEmpty(message))
-            {
-                await Task.FromException(new ArgumentException("Invalid message"));
-            }
-            _messages.Add(message);
-            await _stream.OnNextAsync(author.GetPrimaryKeyString() + " wrote: " + message);
-
-            return;
-        }*/
-
         public async Task<List<string>> GetMessages()
         {
             return await Task.FromResult(_messages);
         }
 
-        public async Task Add(IUser newMember)
+        public async Task AddUser(string newMember)
         {
-            if (newMember == null)
+            if (String.IsNullOrEmpty(newMember))
             {
                 await Task.FromException(new ArgumentException("New member is invalid"));
             }
-            if (_chatRoomMembers.Contains(newMember!.GetPrimaryKey()))
+            if (_chatRoomMembers.Contains(newMember))
             {
-                await Task.FromException(new ArgumentException("This user is already a memeber of this chat"));
+                _logger.LogWarning($"User {newMember} is already a member of this chat");
             }
-            _chatRoomMembers.Add(newMember!.GetPrimaryKey());
-            var notification = newMember.GetPrimaryKeyString() + " joined your \"" + this.GetPrimaryKeyString() + "\" chat!";
+
+            // Changes ChatRoom from Direct to Group
+            if (_chatRoomMembers.Count() == 2)
+            {
+                _isGroup = true;
+                _logger.LogInformation($"Chatroom {this.GetPrimaryKeyString()} has become a Group chat");
+            }
+            
+            _chatRoomMembers.Add(newMember);
+            _logger.LogInformation($"User {newMember} has joined the ChatRoom {this.GetPrimaryKeyString()}");
+            var notification = newMember + " joined your \"" + this.GetPrimaryKeyString() + "\" chat!";
             await _userNotifiersManager.Notify(notifier => notifier.ReceiveNotification(notification));
-            var userNotifier = _grainFactory.GetGrain<IUserNotifier>(newMember.GetPrimaryKeyString());
+            var userNotifier = _grainFactory.GetGrain<IUserNotifier>(newMember);
             _userNotifiersManager.Subscribe(userNotifier, userNotifier);
 
             await Task.CompletedTask;
+        }
+        
+        public async Task AddMultipleUsers(List<string> newMembers)
+        {
+            foreach (var member in newMembers)
+            {
+                try
+                {
+                    await AddUser(member);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw;
+                }
+            }
 
-            /*
-            var sub = await _stream.SubscribeAsync(newMember!);
-            newMember!.GetChatAndSubscriptionHandle().Result.Add(this.GetPrimaryKey(), sub.HandleId);
-            await _stream.OnNextAsync(notification);
-            
-            return _stream.StreamId;*/
+            await Task.CompletedTask;
         }
 
 
-        public async Task Leave(IUser member)
+        public async Task Leave(string member)
         {
-            if (member == null)
+            if (String.IsNullOrEmpty(member))
             {
                 await Task.FromException(new ArgumentException("The member to be removed is invalid"));
             }
-            if (!_chatRoomMembers.Contains(member!.GetPrimaryKey()))
+            if (!_chatRoomMembers.Contains(member))
             {
                 await Task.FromException(new ArgumentException("This user is not a memeber of this chat"));
             }
-            _chatRoomMembers.Remove(member!.GetPrimaryKey());
-            var userNotifier = _grainFactory.GetGrain<IUserNotifier>(member.GetPrimaryKeyString());
+            _chatRoomMembers.Remove(member);
+            var userNotifier = _grainFactory.GetGrain<IUserNotifier>(member);
             _userNotifiersManager.Unsubscribe(userNotifier);
-            var notification = member.GetPrimaryKeyString() + " leaved your \"" + this.GetPrimaryKeyString() + "\" chat!";
+            var notification = member + " leaved your \"" + this.GetPrimaryKeyString() + "\" chat!";
             await _userNotifiersManager.Notify(notifier => notifier.ReceiveNotification(notification));
 
             await Task.CompletedTask;
 
-            /*string notification = member.GetPrimaryKeyString() + " leaved your \"" + this.GetPrimaryKeyString() + "\" chat!";
-            await _stream.OnNextAsync(notification);
-            await Unsubscrive(member!);
-
-            return _stream.StreamId;*/
         }
-
         /*private async Task Unsubscrive(IUser member)
         {
             var chatAndSubscriptionHandle = await member.GetChatAndSubscriptionHandle();

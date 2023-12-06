@@ -1,0 +1,8 @@
+###
+GET http://localhost:5235/users
+
+###
+GET http://localhost:5235/api/Users/pepe/befriend/carlos
+
+###
+GET http://localhost:5235/api/ChatRoom/pepe_carlos/users

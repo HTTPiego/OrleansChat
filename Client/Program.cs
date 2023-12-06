@@ -1,9 +1,10 @@
-﻿using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using GrainInterfaces;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Logging;
 
-IHostBuilder builder = Host.CreateDefaultBuilder(args)
+/*IHostBuilder builder = Host.CreateDefaultBuilder(args)
     .UseOrleansClient(client =>
     {
         client.AddMemoryStreams("chat")
@@ -13,6 +14,27 @@ IHostBuilder builder = Host.CreateDefaultBuilder(args)
     .UseConsoleLifetime();
 
 using IHost host = builder.Build();
-await host.StartAsync();
+await host.RunAsync();
 
-IClusterClient client = host.Services.GetRequiredService<IClusterClient>();
+IClusterClient client = host.Services.GetRequiredService<IClusterClient>();*/
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddControllers();
+
+builder.Host
+    .UseOrleansClient(siloBuilder =>
+    {
+        siloBuilder.UseLocalhostClustering();
+        siloBuilder.AddMemoryStreams("chat");
+    })
+    .ConfigureLogging(logging => logging.AddConsole())
+    .UseConsoleLifetime();
+
+var app = builder.Build();
+
+app.UseHttpsRedirection();
+
+app.MapControllers();
+
+app.Run();

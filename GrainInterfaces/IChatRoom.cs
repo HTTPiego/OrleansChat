@@ -11,7 +11,9 @@ namespace GrainInterfaces
     public interface IChatRoom : IGrainWithStringKey, IAsyncObserver<MessageWithAuthor>
     {
         Task<List<string>> GetMessages();
-        Task Add(IUser newMember);
-        Task Leave(IUser member);
+        Task<List<string>> GetMembers();
+        Task AddUser(string newMember);
+        Task Leave(string member);
+        Task AddMultipleUsers(List<string> newMembers);
     }
 }

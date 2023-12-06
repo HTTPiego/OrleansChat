@@ -1,4 +1,5 @@
 ﻿using GrainInterfaces;
+using Microsoft.Extensions.Logging;
 using Orleans.Runtime;
 using Orleans.Streams;
 
@@ -6,25 +7,23 @@ namespace Grains
 {
     public class User : Grain, IUser
     {
+        private readonly ILogger<User> _logger;
         private readonly IGrainFactory _grainFactory;
-        private readonly List<Guid> _chats = new(); 
-        // or Dictionary<Guid, StreamId> _chatsWithTheirStreams ?  THIS does not need to store the Stream Ids, just the ChatRooms GUIDS cause they are the same
-        // 
-        //private readonly Guid userNotifier; --> same of the owner user
-        //private readonly Dictionary<Guid, Guid> _chatAndSubscriptionHandle = new();
+        private readonly List<string> _chats = new(); 
 
-        public User(IGrainFactory grainFactory)
+        public User(IGrainFactory grainFactory, ILogger<User> logger)
         {
+            _logger = logger;
             _grainFactory = grainFactory;
         }
-
-        public async override Task OnActivateAsync(CancellationToken cancellationToken)
+        
+        /*public async override Task OnActivateAsync(CancellationToken cancellationToken)
         {
             // is the UserNotifier initialization needed here???
             _grainFactory.GetGrain<IUserNotifier>(this.GetPrimaryKeyString());
             await Task.CompletedTask;
         }
-
+*/
         /*foreach (var pair in _chatAndSubscriptionHandle)
             {
                 var chatGuid = pair.Key.ToString();
@@ -50,23 +49,36 @@ namespace Grains
             return notifier.RetriveNotifications();
         }
 
-        public async Task SendMessage(Guid chatRoom, string message)
+        public async Task SendMessage(string chatRoom, string message)
         {
-            if (chatRoom in _chats)
+            if (_chats.Contains(chatRoom))
             {
                 var streamProvider = this.GetStreamProvider("chat");
-                var chatStream = streamProvider.GetStream<string>();
+                var chatStream = streamProvider.GetStream<string>(StreamId.Create("ROOM", chatRoom));
                 await chatStream.OnNextAsync(message);
                 await Task.CompletedTask;
             }
-            await Task.FromException(new ArgumentException("User is not allowed to send messsage this chat or chat does not exist"));
+            await Task.FromException(new ArgumentException("User is not allowed to send message to this chat or chat does not exist"));
         }
 
-        public async Task<List<StreamId>> GetChats()
+        public async Task<List<string>> GetChats()
         {
             return await Task.FromResult(_chats);
         }
 
+        public async Task JoinChatRoom(string chatRoomId)
+        {
+            if (_chats.Contains(chatRoomId))
+            {
+                _logger.LogWarning($"Chatroom {chatRoomId} is already in {this.GetPrimaryKeyString()}'s chats list");
+            }
+            else
+            {
+                _chats.Add(chatRoomId);
+                _logger.LogInformation($"Chatroom {chatRoomId} has been added to {this.GetPrimaryKeyString()}'s chats list");
+            }
 
+            await Task.CompletedTask;
+        }
     }
 }

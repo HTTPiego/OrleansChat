@@ -4,7 +4,8 @@ namespace GrainInterfaces
 {
     public interface IUser : IGrainWithStringKey
     {
-        Task SendMessage(IChatRoom chatRoom, string message);
-        Task<List<StreamId>> GetChats();
+        Task JoinChatRoom(string chatRoomId);
+        Task SendMessage(string chatRoom, string message);
+        Task<List<string>> GetChats();
     }
 }
