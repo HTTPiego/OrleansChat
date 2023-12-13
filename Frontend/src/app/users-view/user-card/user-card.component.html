@@ -1,0 +1,35 @@
+<div class="user-card">
+    <div class="user-card__header">
+        <div class="image-container">
+            <div class="badge" fullCenteredFlex *ngIf="user.befriended">
+                <lucide-angular name="user-check" size="18" />
+            </div>
+            <img src="{{imagePath}}" alt=""/>
+        </div>
+        <p class="name">{{user.name}}</p>
+        <p class="username">{{'@' + user.username}}</p>
+    </div>
+
+    <div class="user-card__body">
+        <ng-template [ngIf]="user.befriended" [ngIfElse]="elseBlock">
+            <p>You two are befriended! </p>
+        </ng-template>
+        <ng-template #elseBlock>
+            <p>You are still not friends! </p>
+        </ng-template>
+    </div>
+
+    <ng-template [ngIf]="!user.befriended" [ngIfElse]="elseButton">
+        <button class="user-card__button outlined-button" (click)="onClickBefriend(user.username)">
+            <lucide-angular name="user-plus" size="20" />
+            Befriend
+        </button>
+    </ng-template>
+    <ng-template #elseButton>
+        <button class="user-card__button outlined-button" disabled>
+            <lucide-angular name="check" size="20" />
+            Befriended
+        </button>
+    </ng-template>
+
+</div>

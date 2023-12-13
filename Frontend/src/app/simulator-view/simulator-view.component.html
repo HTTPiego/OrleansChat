@@ -1,0 +1,27 @@
+<p-toast></p-toast>
+<div class="simulator-view-container">
+    <div class="simulator-view__header">
+        <img src="./assets/orleans-icon.png" alt="orleans icon">
+        <p>RLEANS SIMULATIONS</p>
+    </div>
+    <div class="simulator-view__cards-container" fullCenteredFlex>
+        <simulation-card
+            [cardName]="'Massive User Generation'"
+            [description]="'Generate twenty random users to play with in your chats. ' +
+             'The users are assigned randomized usernames and will appear in the users search section for you to befriend them.'"
+            [imagePath]="'./assets/users-simulation.png'"
+            [OnSimulate]="massiveGenerateUsers"
+        />
+        <simulation-card
+            [cardName]="'Simulated Conversations'"
+            [description]="'Give a burst to your active conversations and simulate the pass of time generating randomized ' +
+             'messages with your friends and inside your groups.'"
+            [imagePath]="'./assets/chats-simulation.png'"
+        />
+        <simulation-card
+            [cardName]="'Massive User Generation'"
+            [description]="'This is the description'"
+            [imagePath]="'./assets/users-simulation.png'"
+        />
+    </div>
+</div>

@@ -1,0 +1,22 @@
+<p-toast></p-toast>
+<div class="chat-room">
+    <div class="chat-room__header" fullCenteredFlex>
+        this is the header
+    </div>
+    <div class="chat-room__main">
+        <div class="chat-room__box">
+            <chat-room-message
+                *ngFor="let message of messages"
+               [message]="message"
+               [ngStyle]="{'justify-content':message.isOwn ? 'flex-end' : 'flex-start'}"/>
+        </div>
+        <div class="chat-room__message-editor" fullCenteredFlex>
+            <div class="message-input-area" >
+                <input class="message-input" type="text" placeholder="Write your message here"/>
+                <button class="message-submit-button" fullCenteredFlex (click)="sendMessage()">
+                    <lucide-angular name="send" [size]="28" color="white"/>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

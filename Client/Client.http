@@ -1,5 +1,8 @@
 ###
-GET http://localhost:5235/users
+GET http://localhost:5235/api/Simulator/massive-generate-users
+
+###
+GET http://localhost:5235/api/Users/all
 
 ###
 GET http://localhost:5235/api/Users/pepe/befriend/carlos

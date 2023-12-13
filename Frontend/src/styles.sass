@@ -1,0 +1,47 @@
+/* You can add global styles to this file, and also import other style files */
+@import "primeng/resources/themes/lara-light-blue/theme.css"
+@import "primeng/resources/primeng.css"
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@100;300;400;500;600;700&display=swap')
+@import "./variables"
+*
+    margin: 0
+    padding: 0
+    font-family: "Roboto Condensed", sans-serif
+
+body
+    font-size: 16px
+
+.primary-button
+    display: flex
+    align-items: center
+    background: $primary-500
+    gap: 0.5rem
+    color: white
+    font-weight: bold
+    border: none
+    border-radius: 5px
+    cursor: pointer
+    transition: all ease-in-out 0.1s
+    &:hover
+        background: $primary-400
+
+.outlined-button
+    display: flex
+    align-items: center
+    color: $primary-500
+    background: white
+    gap: 0.5rem
+    font-weight: 600
+    border: 1px solid $primary-500
+    border-radius: 5px
+    cursor: pointer
+    transition: all ease-in-out 0.1s
+
+    &:hover
+        color: $primary-400
+        border-color: $primary-400
+
+    &:disabled
+        color: $neutral-200
+        border-color: $neutral-200
+        cursor: not-allowed

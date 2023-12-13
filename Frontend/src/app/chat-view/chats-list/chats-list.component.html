@@ -1,0 +1,31 @@
+<div class="chat-list">
+    <div class="chat-list__header" fullCenteredFlex>
+        Search
+    </div>
+    <div class="chat-list__main">
+        <div class="chat-list__selector" fullCenteredFlex>
+            <div class="selector-button">
+                <button
+                    [ngClass]="{selected: selectedChatsOption=='SINGLE'}"
+                    (click)="onSelectedChatsChange('SINGLE')">
+                    Single chats
+                </button>
+                <button
+                    [ngClass]="{selected: selectedChatsOption=='GROUPS'}"
+                    (click)="onSelectedChatsChange('GROUPS')">
+                    Group chats
+                </button>
+            </div>
+        </div>
+        <div class="chat-list__items-list" >
+            <ng-container *ngFor="let item of chats">
+                <chat-list-item
+                    *ngIf="(item.isGroup && selectedChatsOption == 'GROUPS') || (!item.isGroup && selectedChatsOption == 'SINGLE')"
+                    [chatItem]="item"
+                    [isSelected]="selectedChat == item.chatId"
+                    (click)="onSelectChat(item.chatId)"/>
+            </ng-container>
+        </div>
+        <div></div>
+    </div>
+</div>

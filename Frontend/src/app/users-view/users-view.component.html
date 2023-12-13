@@ -1,0 +1,18 @@
+<p-toast></p-toast>
+<div class="user-view-container">
+    <div class="user-view__header">
+        <div class="search-bar">
+            <input type="text" placeholder="Search users by their usernames..."/>
+            <button class="primary-button">
+                <lucide-angular name="search" [size]="24" />
+            </button>
+        </div>
+    </div>
+    <div class="user-view__list-container">
+        <user-card
+            *ngFor="let user of users"
+            [user]="user"
+            (clickedBefriend)="befriendUser($event)"
+        />
+    </div>
+</div>

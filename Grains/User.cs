@@ -1,5 +1,8 @@
-﻿using GrainInterfaces;
+﻿using Grains.DTOs;
+using GrainInterfaces;
+using Grains.GrainState;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json.Linq;
 using Orleans.Runtime;
 using Orleans.Streams;
 
@@ -9,40 +12,43 @@ namespace Grains
     {
         private readonly ILogger<User> _logger;
         private readonly IGrainFactory _grainFactory;
-        private readonly List<string> _chats = new(); 
+        private readonly IPersistentState<UserState> _userState;
 
-        public User(IGrainFactory grainFactory, ILogger<User> logger)
+        public User(
+            [PersistentState("state")] IPersistentState<UserState> userState,
+            IGrainFactory grainFactory, ILogger<User> logger)
         {
             _logger = logger;
             _grainFactory = grainFactory;
+            _userState = userState;
+        }
+
+        public override async Task OnActivateAsync(CancellationToken cancellationToken)
+        {
+            await _userState.ReadStateAsync();
+            await base.OnActivateAsync(cancellationToken);
         }
         
-        /*public async override Task OnActivateAsync(CancellationToken cancellationToken)
+        public async Task<UserDTO> TryCreateUser(string name, string username)
         {
-            // is the UserNotifier initialization needed here???
-            _grainFactory.GetGrain<IUserNotifier>(this.GetPrimaryKeyString());
-            await Task.CompletedTask;
-        }
-*/
-        /*foreach (var pair in _chatAndSubscriptionHandle)
+            if (String.IsNullOrEmpty(_userState.State.Username))
             {
-                var chatGuid = pair.Key.ToString();
-                var subGuid = pair.Value;
-                var streamProvider = this.GetStreamProvider("chat");
-                var streamId = StreamId.Create(chatGuid + "_stream", chatGuid); 
-                var stream = streamProvider.GetStream<string>(streamId);
-                var subscriptionHandles = await stream.GetAllSubscriptionHandles()
-                                                        .ContinueWith(allHandles => allHandles.Result.SkipWhile(handle => !handle.HandleId.Equals(subGuid)));
-                if (subscriptionHandles != null &&
-                    subscriptionHandles.Count() != 0) //!subscriptionHandles.IsNullOrEmpty()
-                {
-                    foreach (var subscriptionHandle in subscriptionHandles) //subscriptionHandles.ForEach( async x => await x.ResumeAsync(OnNextAsync));
-                    {
-                        await subscriptionHandle.ResumeAsync(OnNextAsync);
-                    }
-                }
-            }*/
+                
+                _userState.State.Username = username;
+                _userState.State.Name = name;
 
+                await _userState.WriteStateAsync();
+
+                _logger.LogInformation($"{username}'s data has been persisted.");
+            }
+            else
+            {
+                _logger.LogWarning($"{username} already exists.");
+            }
+
+            return await GetUserState();
+        }
+        
         public Task<List<string>> ReadNotifications()
         {
             var notifier = _grainFactory.GetGrain<IUserNotifier>(this.GetPrimaryKeyString());
@@ -51,7 +57,7 @@ namespace Grains
 
         public async Task SendMessage(string chatRoom, string message)
         {
-            if (_chats.Contains(chatRoom))
+            if (_userState.State.Chats.Contains(chatRoom))
             {
                 var streamProvider = this.GetStreamProvider("chat");
                 var chatStream = streamProvider.GetStream<string>(StreamId.Create("ROOM", chatRoom));
@@ -61,24 +67,53 @@ namespace Grains
             await Task.FromException(new ArgumentException("User is not allowed to send message to this chat or chat does not exist"));
         }
 
-        public async Task<List<string>> GetChats()
-        {
-            return await Task.FromResult(_chats);
-        }
 
         public async Task JoinChatRoom(string chatRoomId)
         {
-            if (_chats.Contains(chatRoomId))
+            if (_userState.State.Chats.Contains(chatRoomId))
             {
                 _logger.LogWarning($"Chatroom {chatRoomId} is already in {this.GetPrimaryKeyString()}'s chats list");
             }
             else
             {
-                _chats.Add(chatRoomId);
+                _userState.State.Chats.Add(chatRoomId);
                 _logger.LogInformation($"Chatroom {chatRoomId} has been added to {this.GetPrimaryKeyString()}'s chats list");
             }
 
             await Task.CompletedTask;
         }
+
+        public async Task AddFriend(string username)
+        {
+            if (_userState.State.Friends.Contains(username))
+            {
+                _logger.LogWarning($"{this.GetPrimaryKeyString()} already has {username} in their friends list");
+            }
+            else
+            {
+                _userState.State.Friends.Add(username);
+                await _userState.WriteStateAsync();
+                _logger.LogInformation($"{username} has been added to {this.GetPrimaryKeyString()}'s friends list");
+            }
+
+            await Task.CompletedTask;
+            
+        }
+
+        public async Task<UserDTO> GetUserState()
+        {
+            return await Task.FromResult(new UserDTO(
+                    name: _userState.State.Name,
+                    username: _userState.State.Username,
+                    chats: _userState.State.Chats,
+                    friends: _userState.State.Friends
+                ));
+        }
+        
+        public async Task<UserPersonalDataDTO> GetUserPersonalState()
+        {
+            return await Task.FromResult(new UserPersonalDataDTO(_userState.State.Name, _userState.State.Username));
+        }
+
     }
 }

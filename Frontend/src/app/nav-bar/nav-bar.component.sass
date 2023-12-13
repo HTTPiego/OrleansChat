@@ -1,0 +1,31 @@
+@import "../../variables"
+
+nav
+    width: 8rem
+    height: 100vh
+    display: flex
+    flex-direction: column
+    justify-content: center
+    align-items: center
+    gap: 7rem
+    box-shadow: 0px 4px 10px 0px rgba(0, 0, 0, 0.25)
+
+    a
+        display: flex
+        flex-direction: column
+        justify-content: center
+        align-items: center
+        color: $neutral-300
+        text-decoration: none
+        font-size: $text-medium
+        transition: all ease-in-out 0.2s
+        width: 100%
+        padding:
+            top: 0.3rem
+            bottom: 0.3rem
+        &:hover
+            color: $secondary-800
+
+.active
+    color: $secondary-800 !important
+    border-right: 4px solid $secondary-800

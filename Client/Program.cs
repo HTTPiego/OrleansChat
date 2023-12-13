@@ -21,6 +21,15 @@ IClusterClient client = host.Services.GetRequiredService<IClusterClient>();*/
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.AddCors(o => o.AddPolicy("CorsPolicy", b =>
+{
+    b
+        .AllowAnyMethod()
+        .AllowAnyHeader()
+        .AllowCredentials()
+        .WithOrigins("http://localhost:4200");
+}));
+
 
 builder.Host
     .UseOrleansClient(siloBuilder =>
@@ -34,6 +43,8 @@ builder.Host
 var app = builder.Build();
 
 app.UseHttpsRedirection();
+
+app.UseCors("CorsPolicy");
 
 app.MapControllers();
 

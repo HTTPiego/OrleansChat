@@ -1,0 +1,18 @@
+<nav>
+    <a [routerLink]="'chat'" class="link" [routerLinkActive]="'active'">
+        <lucide-angular name="messages-square" [size]="26"></lucide-angular>
+        Chat
+    </a>
+    <a [routerLink]="'users'" class="link" [routerLinkActive]="'active'">
+        <lucide-angular name="users" [size]="26"></lucide-angular>
+        Users
+    </a>
+    <a routerLink="simulator" class="link" [routerLinkActive]="'active'">
+        <lucide-angular name="cpu" class="icon" [size]="26"></lucide-angular>
+        Simulator
+    </a>
+    <a routerLink="stats">
+        <lucide-angular name="cpu" class="icon" [size]="26"></lucide-angular>
+        Stats
+    </a>
+</nav>

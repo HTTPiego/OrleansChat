@@ -1,0 +1,9 @@
+<div class="chat-room-message">
+    <div [ngClass]="{'chat-message__main':true, 'own':message.isOwn}">
+        {{message.message}}
+    </div>
+    <div [ngClass]="{'chat-message__info':true, 'own':message.isOwn}">
+        {{message.time}}
+    </div>
+</div>
+

@@ -1,0 +1,15 @@
+<div [ngClass]="{'chat-list-item':true, 'selected':isSelected}">
+    <div class="chat-list-item--avatar-container">
+        <avatar [name]="chatItem.chatName" />
+    </div>
+    <div class="chat-list-item--info-container">
+        <div class="chat-list-item--info-header">
+            <p class="chat-name"> {{ chatItem.chatName }} </p>
+            <p class="last-message-time"> {{ chatItem.lastMessageTime }} </p>
+        </div>
+        <div class="chat-list-item--info-message">
+            {{ chatItem.lastMessage }}
+        </div>
+    </div>
+    <badge [number]="chatItem.pendingMessages" />
+</div>

@@ -17,20 +17,25 @@ public class SimulatorController : Controller
     }
     
     /// <summary>
-    /// Generates 50 users with randomly defined usernames.
+    /// Generates 20 users with randomly defined usernames.
     /// </summary>
     /// <returns></returns>
     [HttpGet("massive-generate-users")]
-    public IActionResult MassiveGenerateUsers()
+    public async Task<IActionResult> MassiveGenerateUsers()
     {
         var nameGenerator = new PersonNameGenerator();
-        Parallel.ForEach(Enumerable.Repeat(true, 50), async (_, _) =>
+        
+        await Parallel.ForEachAsync(Enumerable.Repeat(true, 20), async (_, _) =>
         {
-            var name = nameGenerator.GenerateRandomFirstName().ToLower();
-            var surname = nameGenerator.GenerateRandomLastName().ToLower();
-            var friend = _grainFactory.GetGrain<IUser>($"{name}.{surname}");
+            var name = nameGenerator.GenerateRandomFirstName();
+            var surname = nameGenerator.GenerateRandomLastName();
+            var completeName = $"{name} {surname}";
+            var username = $"{name.ToLower()}.{surname.ToLower()}";
+            var newUser = _grainFactory.GetGrain<IUser>(username);
+
+            await newUser.TryCreateUser(completeName, username);
         });
 
-        return Ok("Successfully generated the new users");
+        return Ok(new {Message="Successfully generated the new users"});
     }
 }
