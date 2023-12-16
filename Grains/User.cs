@@ -2,9 +2,7 @@
 using GrainInterfaces;
 using Grains.GrainState;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json.Linq;
 using Orleans.Runtime;
-using Orleans.Streams;
 
 namespace Grains
 {
@@ -16,7 +14,8 @@ namespace Grains
 
         public User(
             [PersistentState("state")] IPersistentState<UserState> userState,
-            IGrainFactory grainFactory, ILogger<User> logger)
+            IGrainFactory grainFactory, 
+            ILogger<User> logger)
         {
             _logger = logger;
             _grainFactory = grainFactory;

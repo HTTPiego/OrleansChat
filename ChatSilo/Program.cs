@@ -9,7 +9,7 @@ IHostBuilder builder = Host.CreateDefaultBuilder(args)
     {
         siloBuilder.UseLocalhostClustering();
         //siloBuilder.AddMemoryStreams("chat");
-       siloBuilder.AddRedisGrainStorageAsDefault(options =>
+        siloBuilder.AddRedisGrainStorageAsDefault(options =>
         {
             options.ConfigurationOptions = new ConfigurationOptions();
             options.ConfigurationOptions.EndPoints.Add("localhost", 6379);

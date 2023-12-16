@@ -1,4 +1,5 @@
 ﻿using GrainInterfaces;
+using Grains.GrainState;
 using Microsoft.Extensions.Logging;
 using Orleans.Runtime;
 using Orleans.Streams;
@@ -14,25 +15,36 @@ namespace Grains
     {
         private readonly ILogger<ChatRoom> _logger;
         private readonly IGrainFactory _grainFactory;
-        private readonly List<string> _chatRoomMembers = new();
         private readonly ObserverManager<IUserNotifier> _userNotifiersManager;
+        private readonly IPersistentState<ChatRoomState> _chatroomState;
+        /*private readonly List<string> _chatRoomMembers = new();
         private readonly List<string> _messages = new();
-        private bool _isGroup = false;
+        private bool _isGroup = false;*/
 
-        public ChatRoom(IGrainFactory grainFactory, ILogger<IUserNotifier> logger, ILogger<ChatRoom> chatroomLogger)
+        public ChatRoom([PersistentState("state")] IPersistentState<ChatRoomState> chatroomState,
+            IGrainFactory grainFactory, 
+            ILogger<IUserNotifier> logger, 
+            ILogger<ChatRoom> chatroomLogger)
         {
             _logger = chatroomLogger;
             _grainFactory = grainFactory;
             _userNotifiersManager = new ObserverManager<IUserNotifier>(TimeSpan.FromMinutes(5), logger);
+            _chatroomState = chatroomState;
+        }
+
+        public override async Task OnActivateAsync(CancellationToken cancellationToken)
+        {
+            await _chatroomState.ReadStateAsync();
+            await base.OnActivateAsync(cancellationToken);
         }
 
         public async Task<List<string>> GetMembers()
         {
-            return await Task.FromResult(_chatRoomMembers);
+            return await Task.FromResult(_chatroomState.State.ChatRoomMembers);
         }
         public async Task<List<string>> GetMessages()
         {
-            return await Task.FromResult(_messages);
+            return await Task.FromResult(_chatroomState.State.Messages);
         }
 
         public async Task AddUser(string newMember)
@@ -41,19 +53,20 @@ namespace Grains
             {
                 await Task.FromException(new ArgumentException("New member is invalid"));
             }
-            if (_chatRoomMembers.Contains(newMember))
+            if (_chatroomState.State.ChatRoomMembers.Contains(newMember))
             {
                 _logger.LogWarning($"User {newMember} is already a member of this chat");
             }
 
             // Changes ChatRoom from Direct to Group
-            if (_chatRoomMembers.Count() == 2)
+            if (_chatroomState.State.ChatRoomMembers.Count() == 2)
             {
-                _isGroup = true;
+                _chatroomState.State.IsGroup = true;
                 _logger.LogInformation($"Chatroom {this.GetPrimaryKeyString()} has become a Group chat");
             }
-            
-            _chatRoomMembers.Add(newMember);
+
+            _chatroomState.State.ChatRoomMembers.Add(newMember);
+            await _chatroomState.WriteStateAsync();
             _logger.LogInformation($"User {newMember} has joined the ChatRoom {this.GetPrimaryKeyString()}");
             var notification = newMember + " joined your \"" + this.GetPrimaryKeyString() + "\" chat!";
             await _userNotifiersManager.Notify(notifier => notifier.ReceiveNotification(notification));
@@ -88,11 +101,12 @@ namespace Grains
             {
                 await Task.FromException(new ArgumentException("The member to be removed is invalid"));
             }
-            if (!_chatRoomMembers.Contains(member))
+            if (!_chatroomState.State.ChatRoomMembers.Contains(member))
             {
                 await Task.FromException(new ArgumentException("This user is not a memeber of this chat"));
             }
-            _chatRoomMembers.Remove(member);
+            _chatroomState.State.ChatRoomMembers.Remove(member);
+            await _chatroomState.WriteStateAsync();
             var userNotifier = _grainFactory.GetGrain<IUserNotifier>(member);
             _userNotifiersManager.Unsubscribe(userNotifier);
             var notification = member + " leaved your \"" + this.GetPrimaryKeyString() + "\" chat!";
@@ -132,13 +146,14 @@ namespace Grains
             return Task.CompletedTask;
         }
 
-        public Task OnNextAsync(MessageWithAuthor item, StreamSequenceToken? token = null)
+        public async Task OnNextAsync(MessageWithAuthor item, StreamSequenceToken? token = null)
         {
-            _messages.Add(item.message);
+            _chatroomState.State.Messages.Add(item.message);
+            await _chatroomState.WriteStateAsync();
             var notification = "New message!";
-            _userNotifiersManager.Notify(notifier => notifier.ReceiveNotification(notification),
+            await _userNotifiersManager.Notify(notifier => notifier.ReceiveNotification(notification),
                                             notifier => ! notifier.GetPrimaryKey().Equals(item.author)); //if user notifier is not that one of the author
-            return Task.CompletedTask;
+            await Task.CompletedTask;
         }
     }
 }
