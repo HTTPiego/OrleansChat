@@ -51,6 +51,8 @@ namespace Client.Controllers
         [HttpGet()]
         public async Task<IActionResult> SearchUsersByUsername([FromQuery(Name = "search")] string search)
         {
+            //grain to keep lists in its state of all users id??
+
             Console.WriteLine(search);
             // REDIS DB CONNECTION
             ConnectionMultiplexer connection = ConnectToRedis();
