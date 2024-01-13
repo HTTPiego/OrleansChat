@@ -1,10 +1,15 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Grains.GrainState
 {
     [Serializable]
     public class ChatRoomState
     {
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        [Key]
+        public Guid IdChatRoom { get; set; }
+        
         public string ChatName { get; set; } = default!;
 
         [NotMapped]

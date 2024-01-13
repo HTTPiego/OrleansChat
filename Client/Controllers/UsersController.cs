@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json.Linq;
 using NRedisStack.RedisStackCommands;
 using StackExchange.Redis;
+using Client.Repositories.Interfaces;
+using Client.Repositories;
 
 namespace Client.Controllers
 {
@@ -15,10 +17,14 @@ namespace Client.Controllers
     public class UsersController : ControllerBase
     {
 
+        //TODO:
+        private readonly IUserRepository _userRepository;
+
         private readonly IGrainFactory _grainFactory;
         
-        public UsersController(IGrainFactory grainFactory)
+        public UsersController(UserRepository userRepository, IGrainFactory grainFactory)
         {
+            _userRepository = userRepository;
             _grainFactory = grainFactory;
         }
         

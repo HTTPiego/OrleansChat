@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Grains.GrainState
@@ -5,10 +6,14 @@ namespace Grains.GrainState
     [Serializable]
     public class UserState
     {
-        public string Name { get; set; } = default!;
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        [Key]
+        public Guid IdChatRoom { get; set; }
+        
+        public string Username { get; set; }
 
         [NotMapped]
-        public string Username { get; set; }
+        public string Name { get; set; } = default!;
 
         [NotMapped]
         public List<string> Chats = new();

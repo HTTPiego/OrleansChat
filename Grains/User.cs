@@ -8,6 +8,8 @@ namespace Grains
 {
     public class User : Grain, IUser
     {
+        //TODO: USE GUID AS KEY!!!!
+
         private readonly ILogger<User> _logger;
         private readonly IGrainFactory _grainFactory;
         private readonly IPersistentState<UserState> _userState;

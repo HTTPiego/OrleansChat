@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Client.Repositories.Interfaces;
+using Client.Repositories;
 
 /*IHostBuilder builder = Host.CreateDefaultBuilder(args)
     .UseOrleansClient(client =>
@@ -26,6 +28,9 @@ builder.Services.AddDbContext<Client.ChatDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("Chat"));
 });
+
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IChatRoomRepository, ChatRoomRepository>();
 
 builder.Services.AddControllers();
 builder.Services.AddCors(o => o.AddPolicy("CorsPolicy", b =>

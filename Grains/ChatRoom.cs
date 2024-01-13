@@ -13,6 +13,8 @@ namespace Grains
     [ImplicitStreamSubscription("ROOM")] 
     public class ChatRoom : Grain, IChatRoom
     {
+        //TODO: USE GUID AS KEY!!!!
+
         private readonly ILogger<ChatRoom> _logger;
         private readonly IGrainFactory _grainFactory;
         private readonly ObserverManager<IUserNotifier> _userNotifiersManager;

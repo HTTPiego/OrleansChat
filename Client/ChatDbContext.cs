@@ -10,9 +10,9 @@ namespace Client
 {
     public class ChatDbContext : DbContext
     {
-        public DbSet<UserState> users { get; set; }
+        public DbSet<UserState> Users { get; set; }
 
-        public DbSet<ChatRoomState> chats { get; set; }
+        public DbSet<ChatRoomState> Chats { get; set; }
 
         public ChatDbContext() { }
 

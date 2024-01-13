@@ -4,7 +4,7 @@ using Orleans.Runtime;
 
 namespace GrainInterfaces
 {
-    public interface IUser : IGrainWithStringKey
+    public interface IUser : IGrainWithStringKey //IGrainWithGuidKey
     {
         Task<UserDTO> TryCreateUser(string name, string username);
         Task JoinChatRoom(string chatRoomId);
