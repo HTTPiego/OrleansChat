@@ -1,10 +1,6 @@
 ﻿using Client.Repositories.Interfaces;
+using Grains.GrainState;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Client.Repositories
 {
@@ -37,9 +33,26 @@ namespace Client.Repositories
             GC.SuppressFinalize(this);
         }
 
-        public Task<>
+        public async Task<List<ChatRoomState>> GetAllChatRooms()
+        {
+            return await _context.Chats.ToListAsync();
+        }
 
-        //TODO: Implement
+        public async Task<ChatRoomState> AddChatRoom(ChatRoomState chat)
+        {
+            if(chat != null)
+                throw new ArgumentNullException(nameof(chat));
+            _context.Chats.Add(chat!);
+            return await Task.FromResult(chat!);
+        }
+
+        public async Task<ChatRoomState> RemoveChatRoom(ChatRoomState chat)
+        {
+            if (chat != null)
+                throw new ArgumentNullException(nameof(chat));
+            _context.Chats.Remove(chat!);
+            return await Task.FromResult(chat!);
+        }
 
     }
 }

@@ -1,10 +1,6 @@
 ﻿using Client.Repositories.Interfaces;
+using Grains.GrainState;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Client.Repositories
 {
@@ -37,7 +33,26 @@ namespace Client.Repositories
             GC.SuppressFinalize(this);
         }
 
-        //TODO: Implement
+        public async Task<List<ChatRoomState>> GetAllUsers()
+        {
+            return await _context.Chats.ToListAsync();
+        }
+
+        public async Task<UserState> AddUser(UserState user)
+        {
+            if (user != null)
+                throw new ArgumentNullException(nameof(user));
+            _context.Users.Add(user!);
+            return await Task.FromResult(user!);
+        }
+
+        public async Task<UserState> RemoveUser(UserState user)
+        {
+            if (user != null)
+                throw new ArgumentNullException(nameof(user));
+            _context.Users.Remove(user!);
+            return await Task.FromResult(user!);
+        }
 
     }
 }

@@ -1,7 +1,6 @@
 ﻿using Client.Repositories;
 using Client.Repositories.Interfaces;
 using GrainInterfaces;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using StackExchange.Redis;
 
