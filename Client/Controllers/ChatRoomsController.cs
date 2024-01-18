@@ -1,5 +1,6 @@
-﻿using GrainInterfaces;
-using Microsoft.AspNetCore.Http;
+﻿using Client.Repositories;
+using Client.Repositories.Interfaces;
+using GrainInterfaces;
 using Microsoft.AspNetCore.Mvc;
 using StackExchange.Redis;
 
@@ -9,11 +10,14 @@ namespace Client.Controllers
     [ApiController]
     public class ChatRoomsController : ControllerBase
     {
-        // TODO: to do
+        // TODO:
+        private readonly IChatRoomRepository _chatRoomRepository;
+
         private readonly IGrainFactory _grainFactory;
 
-        public ChatRoomsController(IGrainFactory grainFactory)
+        public ChatRoomsController(ChatRoomRepository chatRoomRepository, IGrainFactory grainFactory)
         {
+            _chatRoomRepository = chatRoomRepository;
             _grainFactory = grainFactory;
         }
 
