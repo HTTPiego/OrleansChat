@@ -38,8 +38,15 @@ namespace Client.Repositories
             return await _context.Chats.ToListAsync();
         }
 
+        public async Task<UserState> UserIsRegistered(string username)
+        {
+            return await Task.FromResult(_context.Users.Where(user => user.Username.Equals(username)).ToList().FirstOrDefault()!);
+        }
+
         public async Task<UserState> AddUser(UserState user)
         {
+            if (_context.Users.Contains(user))
+                throw new ArgumentException("The user " + user.Name + " already exists");
             if (user != null)
                 throw new ArgumentNullException(nameof(user));
             _context.Users.Add(user!);

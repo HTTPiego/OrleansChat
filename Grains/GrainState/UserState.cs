@@ -1,3 +1,4 @@
+using Grains.DTOs;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -20,6 +21,21 @@ namespace Grains.GrainState
 
         [NotMapped]
         public List<string> Friends = new();
+
+        public async Task<UserDTO> GetUserStateDTO()
+        {
+            return await Task.FromResult(new UserDTO(
+                    name: Name,
+                    username: Username,
+                    chats: Chats,
+                    friends: Friends
+                ));
+        }
+
+        public async Task<UserPersonalDataDTO> GetUserPersonalStateDTO()
+        {
+            return await Task.FromResult(new UserPersonalDataDTO(Name, Username));
+        }
 
     }
 }

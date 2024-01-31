@@ -1,4 +1,6 @@
-﻿using Orleans.Streams;
+﻿using Grains.DTOs;
+using Grains.GrainState;
+using Orleans.Streams;
 
 namespace GrainInterfaces
 {
@@ -15,5 +17,7 @@ namespace GrainInterfaces
         Task AddUser(string newMember);
         Task Leave(string member);
         Task AddMultipleUsers(List<string> newMembers);
+        Task<ChatRoomState> GetChatState();
+        Task<ChatRoomDTO> TrySaveChat(string chatName);
     }
 }

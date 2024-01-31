@@ -1,4 +1,5 @@
 ﻿using GrainInterfaces;
+using Grains.DTOs;
 using Grains.GrainState;
 using Microsoft.Extensions.Logging;
 using Orleans.Runtime;
@@ -117,6 +118,26 @@ namespace Grains
             await Task.CompletedTask;
 
         }
+
+
+        public async Task<ChatRoomDTO> TrySaveChat(string chatName)
+        {
+            if (String.IsNullOrEmpty(_chatroomState.State.ChatName))
+            {
+                _chatroomState.State.ChatName = chatName;
+
+                await _chatroomState.WriteStateAsync();
+
+                _logger.LogInformation($"{chatName}'s data has been persisted.");
+            }
+            else
+            {
+                _logger.LogWarning($"{chatName} already exists.");
+            }
+
+            return await _chatroomState.State.GetChatRoomStateDTO();
+        }
+
         /*private async Task Unsubscrive(IUser member)
         {
             var chatAndSubscriptionHandle = await member.GetChatAndSubscriptionHandle();
@@ -157,5 +178,11 @@ namespace Grains
                                             notifier => ! notifier.GetPrimaryKey().Equals(item.author)); //if user notifier is not that one of the author
             await Task.CompletedTask;
         }
+
+        public async Task<ChatRoomState> GetChatState()
+        {
+            return await Task.FromResult(_chatroomState.State);
+        }
+
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Grains.DTOs;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Grains.GrainState
@@ -20,5 +21,10 @@ namespace Grains.GrainState
 
         [NotMapped]
         public bool IsGroup { get; set; } = false;
+
+        public async Task<ChatRoomDTO> GetChatRoomStateDTO()
+        {
+            return await Task.FromResult(new ChatRoomDTO(ChatName, ChatRoomMembers));
+        }
     }
 }
