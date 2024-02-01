@@ -39,6 +39,11 @@ namespace Client.Repositories
             return await _context.Chats.ToListAsync();
         }
 
+        public async Task<ChatRoomState?> GetChatRoomBy(string chatname)
+        {
+            return await _context.Chats.Where(chat => chat.ChatName.Equals(chatname)).FirstOrDefaultAsync();
+        }
+
         public async Task<ChatRoomState> AddChatRoom(ChatRoomState chat)
         {
             if (_context.Chats.Contains(chat))

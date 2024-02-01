@@ -1,9 +1,7 @@
 ﻿using Client.Repositories;
-using Client.Repositories.Interfaces;
 using GrainInterfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using StackExchange.Redis;
 
 namespace Client.Controllers
 {
@@ -25,25 +23,14 @@ namespace Client.Controllers
             _logger = logger;   
         }
 
-        [HttpGet("{chatRoomId}/users")]
+        /*[HttpGet("{chatRoomId}/users")]
         public async Task<IActionResult> GetAllUsersForChatRoom(string chatRoomId)
         {
-            /*// REDIS DB CONNECTION
-            ConnectionMultiplexer connection = ConnectToRedis();
-            IDatabase db = connection.GetDatabase();
-            IServer srv = connection.GetServer("localhost", 6379);
-
-            //GET ALL GRAINS KEYS IN REDIS
-            var keys = srv.Keys(db.Database, $"default/state/chatroom/*").ToArray();
-
-            Console.Write(keys.First());*/
-
-
             var chatroom = _grainFactory.GetGrain<IChatRoom>(chatRoomId);
             var members = await chatroom.GetMembers();
 
             return Ok(new {Members = members});
-        }
+        }*/
         
         [HttpGet("add/{username}/to/{chatroom}")]
         public async Task<IActionResult> AddUserToChatRoom(string username, string chatroom)
@@ -91,11 +78,5 @@ namespace Client.Controllers
             return Ok(new { Message = $"User {username1} has befriended {username2} successfully and a chat room has been created." });
         }
 
-
-        private ConnectionMultiplexer ConnectToRedis()
-        {
-            ConfigurationOptions options = new ConfigurationOptions { EndPoints = { { "localhost", 6379 } } };
-            return ConnectionMultiplexer.Connect(options);
-        }
     }
 }

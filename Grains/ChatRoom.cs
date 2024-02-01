@@ -1,4 +1,5 @@
-﻿using GrainInterfaces;
+﻿using ChatSilo.DTOs;
+using GrainInterfaces;
 using Grains.DTOs;
 using Grains.GrainState;
 using Microsoft.Extensions.Logging;
@@ -45,7 +46,7 @@ namespace Grains
         {
             return await Task.FromResult(_chatroomState.State.ChatRoomMembers);
         }
-        public async Task<List<string>> GetMessages()
+        public async Task<List<UserMessage>> GetMessages()
         {
             return await Task.FromResult(_chatroomState.State.Messages);
         }
@@ -169,13 +170,14 @@ namespace Grains
             return Task.CompletedTask;
         }
 
-        public async Task OnNextAsync(MessageWithAuthor item, StreamSequenceToken? token = null)
+        public async Task OnNextAsync(UserMessageDTO userMessage, StreamSequenceToken? token = null)
         {
-            _chatroomState.State.Messages.Add(item.message);
+            var message = new UserMessage(userMessage.AuthorUsername, userMessage.ChatRoomName, userMessage.TextMessage, userMessage.Timestamp);
+            _chatroomState.State.Messages.Add(message);
             await _chatroomState.WriteStateAsync();
             var notification = "New message!";
             await _userNotifiersManager.Notify(notifier => notifier.ReceiveNotification(notification),
-                                            notifier => ! notifier.GetPrimaryKey().Equals(item.author)); //if user notifier is not that one of the author
+                                            notifier => ! notifier.GetPrimaryKey().Equals(message.AuthorUsername)); //if user notifier is not that one of the author
             await Task.CompletedTask;
         }
 

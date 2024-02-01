@@ -33,9 +33,14 @@ namespace Client.Repositories
             GC.SuppressFinalize(this);
         }
 
-        public async Task<List<ChatRoomState>> GetAllUsers()
+        public async Task<List<UserState>> GetAllUsers()
         {
-            return await _context.Chats.ToListAsync();
+            return await _context.Users.ToListAsync();
+        }
+
+        public async Task<List<UserState>> GetAllUsersBySubstring(string substring)
+        {
+            return await _context.Users.Where(user => user.Username.Contains(substring.ToLower())).ToListAsync();
         }
 
         public async Task<UserState> UserIsRegistered(string username)

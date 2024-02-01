@@ -1,4 +1,6 @@
-﻿using Grains.DTOs;
+﻿using ChatSilo.DTOs;
+using GrainInterfaces;
+using Grains.DTOs;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -17,7 +19,7 @@ namespace Grains.GrainState
         public List<string> ChatRoomMembers = new();
 
         [NotMapped]
-        public List<string> Messages = new();
+        public List<UserMessage> Messages = new();
 
         [NotMapped]
         public bool IsGroup { get; set; } = false;

@@ -2,14 +2,8 @@
 using Grains.DTOs;
 using Client.Contracts;
 using GrainInterfaces;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json.Linq;
-using NRedisStack.RedisStackCommands;
-using StackExchange.Redis;
-using Client.Repositories.Interfaces;
 using Client.Repositories;
-using Grains;
 using Microsoft.Extensions.Logging;
 
 namespace Client.Controllers
@@ -38,56 +32,37 @@ namespace Client.Controllers
         [HttpGet("all")]
         public async Task<IActionResult> GetAllUsers()
         {
-            // REDIS DB CONNECTION
-            ConnectionMultiplexer connection = ConnectToRedis();
-            IDatabase db = connection.GetDatabase();
-            IServer srv = connection.GetServer("localhost",6379);
-                
-            //GET ALL GRAINS KEYS IN REDIS
-            var keys = srv.Keys(db.Database, $"default/state/user/*").ToArray();
-            ConcurrentBag<UserPersonalDataDTO> users = new ConcurrentBag<UserPersonalDataDTO>();
-            
-            await Parallel.ForEachAsync(keys, async (key, ct) =>
-            {
-                var username = key.ToString().Split("/")[3];
-                var userGrain = _grainFactory.GetGrain<IUser>(username);
+            var users = await _userRepository.GetAllUsers();
 
-                var grainState = await userGrain.GetUserPersonalState();
-                
-                users.Add(grainState);
+            ConcurrentBag<UserPersonalDataDTO> usersResponse = new ConcurrentBag<UserPersonalDataDTO>();
+
+            await Parallel.ForEachAsync(users, async (userState, ct) =>
+            {
+                usersResponse.Add(await userState.GetUserPersonalStateDTO());
             });
-            
-            return Ok(users.ToArray());
+
+            return Ok(usersResponse);
         }
 
         [HttpGet()]
-        public async Task<IActionResult> SearchUsersByUsername([FromQuery(Name = "search")] string search)
+        public async Task<IActionResult> SearchUsersBySubstring([FromQuery(Name = "search")] string search)
         {
-            //grain to keep lists in its state of all users id??
+            var users = await _userRepository.GetAllUsersBySubstring(search);
 
-            Console.WriteLine(search);
-            // REDIS DB CONNECTION
-            ConnectionMultiplexer connection = ConnectToRedis();
-            IDatabase db = connection.GetDatabase();
-            IServer srv = connection.GetServer("localhost",6379);
-                
-            //GET ALL GRAINS KEYS IN REDIS
-            var keys = srv.Keys(db.Database, $"default/state/user/*{search}*/state").ToArray();
-            ConcurrentBag<UserPersonalDataDTO> users = new ConcurrentBag<UserPersonalDataDTO>();
-            
-            await Parallel.ForEachAsync(keys, async (key, ct) =>
+            ConcurrentBag<UserPersonalDataDTO> usersResponse = new ConcurrentBag<UserPersonalDataDTO>();
+
+            await Parallel.ForEachAsync(users, async (userState, ct) =>
             {
-                var username = key.ToString().Split("/")[3];
-                var userGrain = _grainFactory.GetGrain<IUser>(username);
-
-                var grainState = await userGrain.GetUserPersonalState();
-                
-                users.Add(grainState);
+                usersResponse.Add(await userState.GetUserPersonalStateDTO());
             });
+
+            return Ok(usersResponse);
+
             
-            return Ok(users.ToArray());
         }
+
         
+
         [HttpGet("master-user")]
         public async Task<IActionResult> GetOrCreateMasterUser()
         {
@@ -131,73 +106,53 @@ namespace Client.Controllers
             return Ok(request.Username);
         }
 
-        public async Task<List<string>> RetriveUserChats(string userName)
+        public IActionResult RetriveChatsPreviewsBy(string username)
         {
-            if (!String.IsNullOrEmpty(userName))
+            if (!String.IsNullOrEmpty(username))
             {
-                throw new ArgumentException("...");    
+                throw new ArgumentException("...");
             }
-            if (_userRepository.UserIsRegistered(userName) == null)
+            if (_userRepository.UserIsRegistered(username) == null)
             {
                 throw new ArgumentException("...");
             }
 
-            var userGrain = _grainFactory.GetGrain<IUser>(userName);
+            var userGrain = _grainFactory.GetGrain<IUser>(username);
 
-            return await Task.FromResult(userGrain.GetUserState().Result.Chats);
+            //var response = new List<ChatPreviewDTO>();  
+            var response = new List<UserMessage>(); //here there is the chat in which the mess has been written
+
+            var chats = userGrain.GetUserState().Result.Chats;
+
+            foreach (var chat in chats)
+            {
+                var chatGrain = _grainFactory.GetGrain<IChatRoom>(chat);
+                var lastmessage = chatGrain.GetChatState().Result.Messages.Last();
+                //var chatPreview = new ChatPreviewDTO(chat, lastmessage);
+                response.Add(lastmessage);
+            }
+
+            return Ok(response);
         }
 
-        public async Task<List<string>> RetriveUserFriends(string userName)
+
+        public async Task<IActionResult> RetriveUserFriends(string username)
         {
-            if (!String.IsNullOrEmpty(userName))
+            if (!String.IsNullOrEmpty(username))
             {
                 throw new ArgumentException("...");
             }
-            if (_userRepository.UserIsRegistered(userName) == null)
+            if (_userRepository.UserIsRegistered(username) == null)
             {
                 throw new ArgumentException("...");
             }
 
-            var userGrain = _grainFactory.GetGrain<IUser>(userName);
+            var userGrain = _grainFactory.GetGrain<IUser>(username);
 
-            return await Task.FromResult(userGrain.GetUserState().Result.Friends);
+            return Ok(userGrain.GetUserState().Result.Friends);
         }
 
-        /*[HttpGet("{username1}/befriend/{username2}")]
-        public async Task<IActionResult> Befriend(string username1, string username2)
-        {
-            var user1 = _grainFactory.GetGrain<IUser>(username1);
-            var user2 = _grainFactory.GetGrain<IUser>(username2);
-            
-            var newChatRoom = _grainFactory.GetGrain<IChatRoom>($"{username1}_{username2}");
-            try
-            {
-                await _
-            }
-
-            try
-            {
-                await user1.JoinChatRoom(newChatRoom.GetPrimaryKeyString());
-                await user1.AddFriend(username2);
-                await user2.JoinChatRoom(newChatRoom.GetPrimaryKeyString());
-                await user2.AddFriend(username1);
-                
-                await newChatRoom.AddMultipleUsers(new List<string>(){username1, username2});
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                return StatusCode(500, $"An error occured while creating the user relationship.");
-            }
-
-            return Ok(new{Message = $"User {username1} has befriended {username2} successfully and a chat room has been created."});
-        }*/
-
-        private ConnectionMultiplexer ConnectToRedis()
-        {
-            ConfigurationOptions options = new ConfigurationOptions { EndPoints = { {"localhost", 6379} } };
-            return ConnectionMultiplexer.Connect(options);
-        }
+        
 
     }
 }
