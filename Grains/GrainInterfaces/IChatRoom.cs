@@ -21,7 +21,7 @@ namespace GrainInterfaces
         }    
     }
 
-    public interface IChatRoom : IAsyncObserver<UserMessageDTO>, IGrainWithStringKey //IGrainWithGuidKey
+    public interface IChatRoom : IAsyncObserver<UserMessage>, IGrainWithStringKey //IGrainWithGuidKey
     {
         Task<List<UserMessage>> GetMessages();
         Task<List<string>> GetMembers();

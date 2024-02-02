@@ -5,6 +5,9 @@ using GrainInterfaces;
 using Microsoft.AspNetCore.Mvc;
 using Client.Repositories;
 using Microsoft.Extensions.Logging;
+using Orleans.Runtime;
+using Orleans.Streams;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Client.Controllers
 {
@@ -18,16 +21,19 @@ namespace Client.Controllers
 
         private readonly IGrainFactory _grainFactory;
 
+        private readonly IStreamProvider _streamProvider;
+
         private ILogger<UsersController> _logger;
 
 
-        public UsersController(UserRepository userRepository, IGrainFactory grainFactory, ILogger<UsersController> logger)
+        public UsersController(UserRepository userRepository, IGrainFactory grainFactory, IStreamProvider streamProvider, ILogger<UsersController> logger)
         {
             _userRepository = userRepository;
             _grainFactory = grainFactory;
+            _streamProvider = streamProvider;
             _logger = logger;
         }
-        
+
         //TODO refactor both GetAllUsers and SearchUsersByUsername, only difference is match pattern
         [HttpGet("all")]
         public async Task<IActionResult> GetAllUsers()
@@ -44,7 +50,7 @@ namespace Client.Controllers
             return Ok(usersResponse);
         }
 
-        [HttpGet()]
+        [HttpGet]
         public async Task<IActionResult> SearchUsersBySubstring([FromQuery(Name = "search")] string search)
         {
             var users = await _userRepository.GetAllUsersBySubstring(search);
@@ -58,10 +64,10 @@ namespace Client.Controllers
 
             return Ok(usersResponse);
 
-            
+
         }
 
-        
+
 
         [HttpGet("master-user")]
         public async Task<IActionResult> GetOrCreateMasterUser()
@@ -73,14 +79,14 @@ namespace Client.Controllers
             {
                 await _userRepository.AddUser(await newUser.GetUserState());
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _logger.LogWarning(ex.Message);
             }
 
             return Ok(master);
         }
-        
+
 
         [HttpPost("new")]
         public async Task<IActionResult> CreateUser(NewUserRequest request)
@@ -105,6 +111,7 @@ namespace Client.Controllers
 
             return Ok(request.Username);
         }
+
 
         public IActionResult RetriveChatsPreviewsBy(string username)
         {
@@ -135,8 +142,8 @@ namespace Client.Controllers
             return Ok(response);
         }
 
-
-        public async Task<IActionResult> RetriveUserFriends(string username)
+        [HttpGet("{username}/friends")]
+        public IActionResult RetriveUserFriends(string username)
         {
             if (!String.IsNullOrEmpty(username))
             {
@@ -150,6 +157,19 @@ namespace Client.Controllers
             var userGrain = _grainFactory.GetGrain<IUser>(username);
 
             return Ok(userGrain.GetUserState().Result.Friends);
+        }
+
+        [HttpPost("send-message")]        
+        
+        public async Task<IActionResult> SendMessage([FromBody]UserMessage message)
+        {
+            if (message.TextMessage.IsNullOrEmpty())
+            {
+                throw new Exception("...");
+            }
+            var userGrain = _grainFactory.GetGrain<IUser>(message.AuthorUsername);
+            await userGrain.SendMessage(message);
+            return Ok(message);
         }
 
         

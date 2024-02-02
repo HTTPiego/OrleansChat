@@ -56,12 +56,13 @@ namespace Grains
             return notifier.RetriveNotifications();
         }
 
-        public async Task SendMessage(string chatRoom, string message)
+        public async Task SendMessage(UserMessage message)
         {
-            if (_userState.State.Chats.Contains(chatRoom))
+            var chatname = message.ChatRoomName;
+            if (_userState.State.Chats.Contains(chatname))
             {
                 var streamProvider = this.GetStreamProvider("chat");
-                var chatStream = streamProvider.GetStream<string>(StreamId.Create("ROOM", chatRoom));
+                var chatStream = streamProvider.GetStream<UserMessage>(StreamId.Create("ROOM", chatname));
                 await chatStream.OnNextAsync(message);
                 await Task.CompletedTask;
             }

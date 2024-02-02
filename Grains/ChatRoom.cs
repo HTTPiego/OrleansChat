@@ -170,9 +170,8 @@ namespace Grains
             return Task.CompletedTask;
         }
 
-        public async Task OnNextAsync(UserMessageDTO userMessage, StreamSequenceToken? token = null)
+        public async Task OnNextAsync(UserMessage message, StreamSequenceToken? token = null)
         {
-            var message = new UserMessage(userMessage.AuthorUsername, userMessage.ChatRoomName, userMessage.TextMessage, userMessage.Timestamp);
             _chatroomState.State.Messages.Add(message);
             await _chatroomState.WriteStateAsync();
             var notification = "New message!";
