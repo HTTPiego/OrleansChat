@@ -1,4 +1,5 @@
 ﻿using Client.Repositories;
+using Client.Repositories.Interfaces;
 using GrainInterfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -10,13 +11,13 @@ namespace Client.Controllers
     public class ChatRoomsController : ControllerBase
     {
         // TODO:
-        private readonly ChatRoomRepository _chatRoomRepository;
+        private readonly IChatRoomRepository _chatRoomRepository;
 
         private readonly IGrainFactory _grainFactory;
 
         private readonly ILogger<ChatRoomsController> _logger;
 
-        public ChatRoomsController(ChatRoomRepository chatRoomRepository, IGrainFactory grainFactory, ILogger<ChatRoomsController> logger)
+        public ChatRoomsController(IChatRoomRepository chatRoomRepository, IGrainFactory grainFactory, ILogger<ChatRoomsController> logger)
         {
             _chatRoomRepository = chatRoomRepository;
             _grainFactory = grainFactory;

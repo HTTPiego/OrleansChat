@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Orleans.Runtime;
 using Orleans.Streams;
 using Microsoft.IdentityModel.Tokens;
+using Client.Repositories.Interfaces;
 
 namespace Client.Controllers
 {
@@ -17,20 +18,17 @@ namespace Client.Controllers
     {
 
         //TODO:
-        private readonly UserRepository _userRepository;
+        private readonly IUserRepository _userRepository;
 
         private readonly IGrainFactory _grainFactory;
-
-        private readonly IStreamProvider _streamProvider;
 
         private ILogger<UsersController> _logger;
 
 
-        public UsersController(UserRepository userRepository, IGrainFactory grainFactory, IStreamProvider streamProvider, ILogger<UsersController> logger)
+        public UsersController(IUserRepository userRepository, IGrainFactory grainFactory, ILogger<UsersController> logger)
         {
             _userRepository = userRepository;
             _grainFactory = grainFactory;
-            _streamProvider = streamProvider;
             _logger = logger;
         }
 

@@ -5,11 +5,16 @@ using Orleans.Streams;
 
 namespace GrainInterfaces
 {
-    public struct UserMessage
+    [GenerateSerializer]
+    public class UserMessage
     {
+        [Id(0)]
         public string AuthorUsername { get; set; }
+        [Id(1)]
         public string ChatRoomName { get; set; }
+        [Id(2)]
         public string TextMessage { get; set; }
+        [Id(3)]
         public DateTime Timestamp { get; set; }
 
         public UserMessage(string author, string chat, string message, DateTime date) 
