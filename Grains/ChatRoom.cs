@@ -1,4 +1,6 @@
-﻿using GrainInterfaces;
+﻿using ChatSilo.DTOs;
+using GrainInterfaces;
+using Grains.DTOs;
 using Grains.GrainState;
 using Microsoft.Extensions.Logging;
 using Orleans.Runtime;
@@ -44,7 +46,7 @@ namespace Grains
         {
             return await Task.FromResult(_chatroomState.State.ChatRoomMembers);
         }
-        public async Task<List<string>> GetMessages()
+        public async Task<List<UserMessage>> GetMessages()
         {
             return await Task.FromResult(_chatroomState.State.Messages);
         }
@@ -117,6 +119,26 @@ namespace Grains
             await Task.CompletedTask;
 
         }
+
+
+        public async Task<ChatRoomDTO> TrySaveChat(string chatName)
+        {
+            if (String.IsNullOrEmpty(_chatroomState.State.ChatName))
+            {
+                _chatroomState.State.ChatName = chatName;
+
+                await _chatroomState.WriteStateAsync();
+
+                _logger.LogInformation($"{chatName}'s data has been persisted.");
+            }
+            else
+            {
+                _logger.LogWarning($"{chatName} already exists.");
+            }
+
+            return await _chatroomState.State.GetChatRoomStateDTO();
+        }
+
         /*private async Task Unsubscrive(IUser member)
         {
             var chatAndSubscriptionHandle = await member.GetChatAndSubscriptionHandle();
@@ -148,14 +170,20 @@ namespace Grains
             return Task.CompletedTask;
         }
 
-        public async Task OnNextAsync(MessageWithAuthor item, StreamSequenceToken? token = null)
+        public async Task OnNextAsync(UserMessage message, StreamSequenceToken? token = null)
         {
-            _chatroomState.State.Messages.Add(item.message);
+            _chatroomState.State.Messages.Add(message);
             await _chatroomState.WriteStateAsync();
             var notification = "New message!";
             await _userNotifiersManager.Notify(notifier => notifier.ReceiveNotification(notification),
-                                            notifier => ! notifier.GetPrimaryKey().Equals(item.author)); //if user notifier is not that one of the author
+                                            notifier => ! notifier.GetPrimaryKey().Equals(message.AuthorUsername)); //if user notifier is not that one of the author
             await Task.CompletedTask;
         }
+
+        public async Task<ChatRoomState> GetChatState()
+        {
+            return await Task.FromResult(_chatroomState.State);
+        }
+
     }
 }

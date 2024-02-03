@@ -33,13 +33,25 @@ namespace Client.Repositories
             GC.SuppressFinalize(this);
         }
 
-        public async Task<List<ChatRoomState>> GetAllUsers()
+        public async Task<List<UserState>> GetAllUsers()
         {
-            return await _context.Chats.ToListAsync();
+            return await _context.Users.ToListAsync();
+        }
+
+        public async Task<List<UserState>> GetAllUsersBySubstring(string substring)
+        {
+            return await _context.Users.Where(user => user.Username.Contains(substring.ToLower())).ToListAsync();
+        }
+
+        public async Task<UserState> UserIsRegistered(string username)
+        {
+            return await Task.FromResult(_context.Users.Where(user => user.Username.Equals(username)).ToList().FirstOrDefault()!);
         }
 
         public async Task<UserState> AddUser(UserState user)
         {
+            if (_context.Users.Contains(user))
+                throw new ArgumentException("The user " + user.Name + " already exists");
             if (user != null)
                 throw new ArgumentNullException(nameof(user));
             _context.Users.Add(user!);

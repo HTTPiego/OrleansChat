@@ -1,4 +1,5 @@
 ﻿using Client.Repositories.Interfaces;
+using Grains;
 using Grains.GrainState;
 using Microsoft.EntityFrameworkCore;
 
@@ -38,8 +39,17 @@ namespace Client.Repositories
             return await _context.Chats.ToListAsync();
         }
 
+        public async Task<ChatRoomState?> GetChatRoomBy(string chatname)
+        {
+            return await _context.Chats.Where(chat => chat.ChatName.Equals(chatname)).FirstOrDefaultAsync();
+        }
+
         public async Task<ChatRoomState> AddChatRoom(ChatRoomState chat)
         {
+            if (_context.Chats.Contains(chat))
+            {
+                throw new ArgumentException("The chat \"" + chat.ChatName + "\" already exists");
+            }
             if(chat != null)
                 throw new ArgumentNullException(nameof(chat));
             _context.Chats.Add(chat!);

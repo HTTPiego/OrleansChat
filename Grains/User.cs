@@ -47,7 +47,7 @@ namespace Grains
                 _logger.LogWarning($"{username} already exists.");
             }
 
-            return await GetUserState();
+            return await _userState.State.GetUserStateDTO();
         }
         
         public Task<List<string>> ReadNotifications()
@@ -56,12 +56,13 @@ namespace Grains
             return notifier.RetriveNotifications();
         }
 
-        public async Task SendMessage(string chatRoom, string message)
+        public async Task SendMessage(UserMessage message)
         {
-            if (_userState.State.Chats.Contains(chatRoom))
+            var chatname = message.ChatRoomName;
+            if (_userState.State.Chats.Contains(chatname))
             {
                 var streamProvider = this.GetStreamProvider("chat");
-                var chatStream = streamProvider.GetStream<string>(StreamId.Create("ROOM", chatRoom));
+                var chatStream = streamProvider.GetStream<UserMessage>(StreamId.Create("ROOM", chatname));
                 await chatStream.OnNextAsync(message);
                 await Task.CompletedTask;
             }
@@ -101,20 +102,20 @@ namespace Grains
             
         }
 
-        public async Task<UserDTO> GetUserState()
+        public async Task<UserState> GetUserState()
         {
-            return await Task.FromResult(new UserDTO(
-                    name: _userState.State.Name,
-                    username: _userState.State.Username,
-                    chats: _userState.State.Chats,
-                    friends: _userState.State.Friends
-                ));
+            return await Task.FromResult( _userState.State );
+        }
+
+        /*public async Task<UserDTO> GetUserStateDTO()
+        {
+            return await _userState.State.GetUserStateDTO();
         }
         
-        public async Task<UserPersonalDataDTO> GetUserPersonalState()
+        public async Task<UserPersonalDataDTO> GetUserPersonalStateDTO()
         {
-            return await Task.FromResult(new UserPersonalDataDTO(_userState.State.Name, _userState.State.Username));
-        }
+            return await _userState.State.GetUserPersonalStateDTO();
+        }*/
 
     }
 }
