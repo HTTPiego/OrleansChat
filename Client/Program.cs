@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
-using GrainInterfaces;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
@@ -26,7 +25,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<Client.ChatDbContext>(options =>
 {
-    options.UseSqlServer(builder.Configuration.GetConnectionString("Chat"));
+    options.UseSqlServer(builder.Configuration["ConnectionStrings:Chat"]);
+    //options.UseSqlServer(builder.Configuration.GetConnectionString("Chat"));
 });
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();

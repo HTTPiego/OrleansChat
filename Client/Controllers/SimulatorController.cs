@@ -1,5 +1,8 @@
+using Client.Repositories;
+using Client.Repositories.Interfaces;
 using GrainInterfaces;
 using Microsoft.AspNetCore.Mvc;
+using Orleans;
 using RandomNameGeneratorLibrary;
 
 namespace Client.Controllers;
@@ -10,10 +13,13 @@ public class SimulatorController : Controller
 {
     
     private readonly IGrainFactory _grainFactory;
-        
-    public SimulatorController(IGrainFactory grainFactory)
+
+    private readonly IUserRepository _userRepository;
+
+    public SimulatorController(IGrainFactory grainFactory, IUserRepository userRepository)
     {
         _grainFactory = grainFactory;
+        _userRepository = userRepository;
     }
     
     /// <summary>
@@ -24,18 +30,31 @@ public class SimulatorController : Controller
     public async Task<IActionResult> MassiveGenerateUsers()
     {
         var nameGenerator = new PersonNameGenerator();
-        
-        await Parallel.ForEachAsync(Enumerable.Repeat(true, 20), async (_, _) =>
+
+        for (int i = 0; i < 20; i++)
         {
             var name = nameGenerator.GenerateRandomFirstName();
             var surname = nameGenerator.GenerateRandomLastName();
-            var completeName = $"{name} {surname}";
             var username = $"{name.ToLower()}.{surname.ToLower()}";
+            var completeName = $"{name} {surname}";
             var newUser = _grainFactory.GetGrain<IUser>(username);
-
             await newUser.TryCreateUser(completeName, username);
-        });
-
+            await _userRepository.AddUser(await newUser.GetUserState());
+        }
         return Ok(new {Message="Successfully generated the new users"});
     }
 }
+
+/*await Parallel.ForEachAsync(Enumerable.Repeat(true, 20), async(_, _) =>
+        {
+            var name = nameGenerator.GenerateRandomFirstName();
+var surname = nameGenerator.GenerateRandomLastName();
+var completeName = $"{name} {surname}";
+var username = $"{name.ToLower()}.{surname.ToLower()}";
+var newUser = _grainFactory.GetGrain<IUser>(username);
+
+await newUser.TryCreateUser(completeName, username);
+
+await _userRepository.AddUser(await newUser.GetUserState());
+
+        });*/
