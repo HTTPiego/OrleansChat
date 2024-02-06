@@ -1,4 +1,5 @@
-﻿using Grains.GrainState;
+﻿using Grains;
+using Grains.GrainState;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -10,15 +11,15 @@ namespace Client.Repositories.Interfaces
 {
     public interface IUserRepository : IDisposable
     {
-        Task<List<UserState>> GetAllUsers();
+        Task<List<UserDB>> GetAllUsers();
 
-        Task<List<UserState>> GetAllUsersBySubstring(string substring);
+        Task<List<UserDB>> GetAllUsersBySubstring(string substring);
 
-        Task<UserState> UserIsRegistered(string username);
+        Task<UserDB> UserIsRegistered(string username);
 
-        Task<UserState> AddUser(UserState user);
+        UserDB AddUser(UserDB user);
 
-        Task<UserState> RemoveUser(UserState user);
+        Task<UserDB> RemoveUser(UserDB user);
 
     }
 }

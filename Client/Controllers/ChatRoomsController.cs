@@ -50,10 +50,13 @@ namespace Client.Controllers
             var user1 = _grainFactory.GetGrain<IUser>(username1);
             var user2 = _grainFactory.GetGrain<IUser>(username2);
 
-            var newChatRoom = _grainFactory.GetGrain<IChatRoom>($"{username1}_{username2}");
+            var chatName = $"{username1}_{username2}";
+            var newChatRoom = _grainFactory.GetGrain<IChatRoom>(chatName);
+            await newChatRoom.TrySaveChat(chatName);
             try
             {
-                await _chatRoomRepository.AddChatRoom(await newChatRoom.GetChatState());
+                //await newChatRoom.AddMultipleUsers(new List<string> { username1, username2});
+                await newChatRoom.ObtainChatRoomDB().ContinueWith(chatdb => _chatRoomRepository.AddChatRoom(chatdb.Result));
             }
             catch (Exception ex)
             {
@@ -62,9 +65,9 @@ namespace Client.Controllers
 
             try
             {
-                await user1.JoinChatRoom(newChatRoom.GetPrimaryKeyString());
+                await user1.JoinChatRoom(chatName);
                 await user1.AddFriend(username2);
-                await user2.JoinChatRoom(newChatRoom.GetPrimaryKeyString());
+                await user2.JoinChatRoom(chatName);
                 await user2.AddFriend(username1);
 
                 await newChatRoom.AddMultipleUsers(new List<string>() { username1, username2 });

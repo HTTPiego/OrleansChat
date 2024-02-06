@@ -6,6 +6,8 @@ using Microsoft.Extensions.Logging;
 using Orleans.Runtime;
 using Orleans.Streams;
 using Orleans.Utilities;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Grains
 {
@@ -48,6 +50,7 @@ namespace Grains
         }
         public async Task<List<UserMessage>> GetMessages()
         {
+            await _chatroomState.ReadStateAsync();
             return await Task.FromResult(_chatroomState.State.Messages);
         }
 
@@ -185,5 +188,39 @@ namespace Grains
             return await Task.FromResult(_chatroomState.State);
         }
 
+        public Task<ChatRoomDB> ObtainChatRoomDB()
+        {
+            return Task.FromResult(new ChatRoomDB(_chatroomState.State.ChatName));
+        }
+
+        public async Task<ChatRoomDTO> GetChatRoomStateDTO()
+        {
+            var chatname = _chatroomState.State.ChatName;
+            var members = _chatroomState.State.ChatRoomMembers;
+            return await Task.FromResult(new ChatRoomDTO(chatname, members));
+        }
+
     }
+
+    [GenerateSerializer]
+
+    public class ChatRoomDB
+    {
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        [Key]
+        [Id(0)]
+        public Guid ChatRoomId { get; set; }
+
+        [Id(1)]
+        public string ChatName { get; set; } = default!;
+
+        public ChatRoomDB() { }
+
+        public ChatRoomDB(string chatRoomName)
+        {
+            //ChatRoomId = new Guid();
+            ChatName = chatRoomName;
+        }
+    }
+
 }
