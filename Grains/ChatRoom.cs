@@ -22,7 +22,7 @@ namespace Grains
         private readonly ILogger<ChatRoom> _logger;
         private readonly IGrainFactory _grainFactory;
         private readonly ObserverManager<IUserNotifier> _userNotifiersManager;
-        private readonly IPersistentState<ChatRoomState> _chatroomState;
+        private IPersistentState<ChatRoomState> _chatroomState;
         /*private readonly List<string> _chatRoomMembers = new();
         private readonly List<string> _messages = new();
         private bool _isGroup = false;*/
@@ -38,16 +38,53 @@ namespace Grains
             _chatroomState = chatroomState;
         }
 
+        /*public async override Task OnActivateAsync(CancellationToken cancellationToken)
+        {
+            var chatname = _chatroomState.State.ChatName;
+            var streamProvider = this.GetStreamProvider("chat");
+            var streamId = StreamId.Create("MyStreamNamespace", chatname);
+            var stream = streamProvider.GetStream<string>(streamId);
+
+            var subscriptionHandles = await stream.GetAllSubscriptionHandles();
+            if (!subscriptionHandles.IsNullOrEmpty())
+            {
+                subscriptionHandles.ForEach(
+                    async x => await x.ResumeAsync(OnNextAsync));
+            }
+        }*/
+
         public override async Task OnActivateAsync(CancellationToken cancellationToken)
         {
             await _chatroomState.ReadStateAsync();
+
+            var chatname = _chatroomState.State.ChatName;
+
+            if (chatname != null)
+            {
+                Console.WriteLine(chatname);
+
+                var streamProvider = this.GetStreamProvider("chat");
+
+                var streamId = StreamId.Create("ROOM", this.GetPrimaryKeyString());
+                var stream = streamProvider.GetStream<UserMessage>(streamId);
+                //await stream.SubscribeAsync(this);
+                await stream.SubscribeAsync(OnNextAsync);
+            }
+
             await base.OnActivateAsync(cancellationToken);
+
         }
 
         public async Task<List<string>> GetMembers()
         {
             return await Task.FromResult(_chatroomState.State.ChatRoomMembers);
         }
+
+        public async Task<string> GetChatname()
+        {
+            return await Task.FromResult(_chatroomState.State.ChatName);
+        }
+
         public async Task<List<UserMessage>> GetMessages()
         {
             await _chatroomState.ReadStateAsync();
@@ -78,6 +115,7 @@ namespace Grains
             var notification = newMember + " joined your \"" + this.GetPrimaryKeyString() + "\" chat!";
             await _userNotifiersManager.Notify(notifier => notifier.ReceiveNotification(notification));
             var userNotifier = _grainFactory.GetGrain<IUserNotifier>(newMember);
+            await userNotifier.TrySaveNotifier(newMember);
             _userNotifiersManager.Subscribe(userNotifier, userNotifier);
 
             await Task.CompletedTask;
@@ -175,11 +213,16 @@ namespace Grains
 
         public async Task OnNextAsync(UserMessage message, StreamSequenceToken? token = null)
         {
+            Console.WriteLine("CIAOCIAO");
             _chatroomState.State.Messages.Add(message);
+            Console.WriteLine("FINO A QUI TUTTO QUA");
             await _chatroomState.WriteStateAsync();
             var notification = "New message!";
-            await _userNotifiersManager.Notify(notifier => notifier.ReceiveNotification(notification),
-                                            notifier => ! notifier.GetPrimaryKey().Equals(message.AuthorUsername)); //if user notifier is not that one of the author
+            Console.WriteLine("FINO A QUI TUTTO QUA");
+            /*await _userNotifiersManager.Notify(async notifier => await notifier.ReceiveNotification(notification),
+                                                 notifier =>  notifier.GetOwnerUsername().Result.Equals(message.AuthorUsername));*/
+                                                            //! notifier.GetPrimaryKey().Equals(message.AuthorUsername)); 
+            //if user notifier is not that one of the author
             await Task.CompletedTask;
         }
 

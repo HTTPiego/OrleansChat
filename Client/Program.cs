@@ -41,7 +41,7 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IChatRoomRepository, ChatRoomRepository>();
 //builder.Services.AddScoped<IGrainStorage>(sp => sp.GetServiceByName<IGrainStorage>(ProviderConstants.DEFAULT_STORAGE_PROVIDER_NAME));
 
-builder.Services.AddSerializer(serializerBuilder =>
+/*builder.Services.AddSerializer(serializerBuilder =>
 {
     serializerBuilder.AddNewtonsoftJsonSerializer(
         isSupported: type => type.Namespace!.StartsWith("Grains.GrainState"));
@@ -51,7 +51,7 @@ builder.Services.AddSerializer(serializerBuilder =>
 {
     serializerBuilder.AddJsonSerializer(
         isSupported: type => type.Namespace.StartsWith("Example.Namespace"));
-});
+});*/
 
 /*builder.Services.AddSerializer(serializerBuilder =>
 {
@@ -74,7 +74,8 @@ builder.Host
     .UseOrleansClient(siloBuilder =>
     {
         siloBuilder.UseLocalhostClustering();
-        siloBuilder.AddMemoryStreams("chat");
+        siloBuilder.AddMemoryStreams("chat", conf => conf.ConfigureStreamPubSub(Orleans.Streams.StreamPubSubType.ImplicitOnly));
+        
     })
     .ConfigureLogging(logging => logging.AddConsole())
     .UseConsoleLifetime();

@@ -180,15 +180,16 @@ namespace Client.Controllers
         }
 
         [HttpPost("send-message")]      
-        public async Task<IActionResult> SendMessage([FromBody]UserMessage message)
+        public async Task SendMessage([FromBody]UserMessage message)
          {
             if (message.TextMessage.IsNullOrEmpty())
             {
                 throw new Exception("...");
             }
             var userGrain = _grainFactory.GetGrain<IUser>(message.AuthorUsername);
+            var chat = _grainFactory.GetGrain<IChatRoom>(message.ChatRoomName);
+            await chat.GetChatname().ContinueWith(name => Console.WriteLine(name.Result));
             await userGrain.SendMessage(message);
-            return Ok(Task.CompletedTask);
         }
 
         

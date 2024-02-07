@@ -28,7 +28,6 @@
     <PackageReference Include="Microsoft.Orleans.Serialization" Version="7.2.3" />
     <PackageReference Include="Microsoft.Orleans.Serialization.NewtonsoftJson" Version="7.2.3" />
     <PackageReference Include="Microsoft.Orleans.Serialization.SystemTextJson" Version="7.2.3" />
-    <PackageReference Include="Microsoft.Orleans.Streaming" Version="7.2.3" />
     <PackageReference Include="NRedisStack" Version="0.10.1" />
     <PackageReference Include="RandomNameGeneratorLibrary" Version="1.2.2" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />

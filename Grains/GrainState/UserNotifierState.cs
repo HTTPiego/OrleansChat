@@ -4,6 +4,9 @@
     public class UserNotifierState
     {
         [Id(0)]
-        public readonly List<string> Notifications = new();
+        public string OwnerUsername { get; set; }
+
+        [Id(1)]
+        public List<string> Notifications { get; set; } = new();
     }
 }

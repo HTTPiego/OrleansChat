@@ -11,17 +11,14 @@ namespace Grains.GrainState
     {
 
         [Id(0)]
-        public string ChatName { get; set; } = default!;
+        public string ChatName { get; set; }
 
-        [NotMapped]
         [Id(1)]
         public List<string> ChatRoomMembers = new();
 
-        [NotMapped]
         [Id(2)]
         public List<UserMessage> Messages = new();
 
-        [NotMapped]
         [Id(3)]
         public bool IsGroup { get; set; } = false;
 

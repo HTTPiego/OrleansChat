@@ -31,6 +31,7 @@ namespace GrainInterfaces
     {
         Task<List<UserMessage>> GetMessages();
         Task<List<string>> GetMembers();
+        Task<string> GetChatname();
         Task AddUser(string newMember);
         Task Leave(string member);
         Task AddMultipleUsers(List<string> newMembers);

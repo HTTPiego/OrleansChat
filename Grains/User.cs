@@ -89,13 +89,14 @@ namespace Grains
             if (_userState.State.Chats.Contains(chatname))
             {
                 Console.WriteLine("QUO");
+                //_grainFactory.GetGrain<IChatRoom>(message.ChatRoomName);
                 var streamProvider = this.GetStreamProvider("chat");
-                Console.WriteLine("QUA");
-                var chatStream = streamProvider.GetStream<UserMessage>(StreamId.Create("ROOM", chatname));
                 //Console.WriteLine("QUA");
+                var chat = _grainFactory.GetGrain<IChatRoom>(message.ChatRoomName);
+                var chatStream = streamProvider.GetStream<UserMessage>(StreamId.Create("ROOM", chat.GetPrimaryKeyString()));
+                Console.WriteLine("QUA");
                 await chatStream.OnNextAsync(message);
                 Console.WriteLine("BINGO");
-                await Task.CompletedTask;
             }
             else
             {
