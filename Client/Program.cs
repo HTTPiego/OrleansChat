@@ -3,16 +3,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Client.Repositories.Interfaces;
 using Client.Repositories;
-using Orleans.Hosting;
-using Newtonsoft;
-using Orleans.Serialization;
-using Orleans.Storage;
-using Orleans.Runtime;
-using Orleans.Providers;
-using Orleans.Core;
+using Client.SignalR;
 
 /*IHostBuilder builder = Host.CreateDefaultBuilder(args)
     .UseOrleansClient(client =>
@@ -39,27 +32,8 @@ builder.Services.AddDbContext<ChatDbContext>(options =>
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IChatRoomRepository, ChatRoomRepository>();
-//builder.Services.AddScoped<IGrainStorage>(sp => sp.GetServiceByName<IGrainStorage>(ProviderConstants.DEFAULT_STORAGE_PROVIDER_NAME));
 
-/*builder.Services.AddSerializer(serializerBuilder =>
-{
-    serializerBuilder.AddNewtonsoftJsonSerializer(
-        isSupported: type => type.Namespace!.StartsWith("Grains.GrainState"));
-});
-
-builder.Services.AddSerializer(serializerBuilder =>
-{
-    serializerBuilder.AddJsonSerializer(
-        isSupported: type => type.Namespace.StartsWith("Example.Namespace"));
-});*/
-
-/*builder.Services.AddSerializer(serializerBuilder =>
-{
-    serializerBuilder.AddJsonSerializer(
-        isSupported: type => type.Namespace!.StartsWith("Grains.GrainState"));
-});*/
-
-builder.Services.AddControllers();
+builder.Services.AddControllers(); //AddControllersWithViews
 builder.Services.AddCors(o => o.AddPolicy("CorsPolicy", b =>
 {
     b
@@ -80,8 +54,7 @@ builder.Host
     .ConfigureLogging(logging => logging.AddConsole())
     .UseConsoleLifetime();
 
-//siloBuilder.AddMemoryStreams("chat");
-//Zuercher.Orleans.Persistence.Redis
+builder.Services.AddSignalR();
 
 var app = builder.Build();
 
@@ -89,7 +62,16 @@ app.UseHttpsRedirection();
 
 app.UseCors("CorsPolicy");
 
+/*app.UseEndpoints(endpoints =>
+{
+    app.MapHub<ChatHub>("send-message");
+});*/
+
+app.MapHub<ChatHub>("send-message");
+
 app.MapControllers();
+
+
 
 app.Run();
 

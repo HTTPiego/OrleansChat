@@ -28,6 +28,8 @@ namespace Grains
 
         public async Task ReceiveNotification(string notification)
         {
+            _logger.LogCritical("ho ricevuto la notifica di @#@#@#@#@#@#@ ======>" + _state.State.OwnerUsername);
+            Console.WriteLine("ho ricevuto la notifica di " + _state.State.OwnerUsername);
             _state.State.Notifications.Add(notification);
             await _state.WriteStateAsync();
         }

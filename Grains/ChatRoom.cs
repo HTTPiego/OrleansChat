@@ -213,15 +213,14 @@ namespace Grains
 
         public async Task OnNextAsync(UserMessage message, StreamSequenceToken? token = null)
         {
-            Console.WriteLine("CIAOCIAO");
             _chatroomState.State.Messages.Add(message);
-            Console.WriteLine("FINO A QUI TUTTO QUA");
             await _chatroomState.WriteStateAsync();
+            _logger.LogCritical("CIAO @#@#@#@#@#@#@ CIAO ======> CIAO");
+            _logger.LogCritical("_______________________________________________________________");
             var notification = "New message!";
-            Console.WriteLine("FINO A QUI TUTTO QUA");
-            /*await _userNotifiersManager.Notify(async notifier => await notifier.ReceiveNotification(notification),
-                                                 notifier =>  notifier.GetOwnerUsername().Result.Equals(message.AuthorUsername));*/
-                                                            //! notifier.GetPrimaryKey().Equals(message.AuthorUsername)); 
+            await _userNotifiersManager.Notify( notifier => notifier.ReceiveNotification(notification),
+                                                 notifier => ! notifier.GetPrimaryKeyString().Equals(message.AuthorUsername));
+            //! notifier.GetPrimaryKey().Equals(message.AuthorUsername)); 
             //if user notifier is not that one of the author
             await Task.CompletedTask;
         }
