@@ -6,5 +6,9 @@ namespace GrainInterfaces
     {
         Task ReceiveNotification(string notification);
         Task<List<string>> RetriveNotifications();
+
+        Task TrySaveNotifier(string ownerusername);
+
+        Task<string> GetOwnerUsername();
     }
 }

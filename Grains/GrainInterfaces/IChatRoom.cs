@@ -1,4 +1,5 @@
 ﻿using ChatSilo.DTOs;
+using Grains;
 using Grains.DTOs;
 using Grains.GrainState;
 using Orleans.Streams;
@@ -17,23 +18,26 @@ namespace GrainInterfaces
         [Id(3)]
         public DateTime Timestamp { get; set; }
 
-        public UserMessage(string author, string chat, string message, DateTime date) 
+        /*public UserMessage(string author, string chat, string message, DateTime date) 
         {
             AuthorUsername = author;
             ChatRoomName = chat;
             TextMessage = message;
             Timestamp = date;
-        }    
+        } */   
     }
 
     public interface IChatRoom : IAsyncObserver<UserMessage>, IGrainWithStringKey //IGrainWithGuidKey
     {
         Task<List<UserMessage>> GetMessages();
         Task<List<string>> GetMembers();
+        Task<string> GetChatname();
         Task AddUser(string newMember);
         Task Leave(string member);
         Task AddMultipleUsers(List<string> newMembers);
         Task<ChatRoomState> GetChatState();
+
+        Task<ChatRoomDB> ObtainChatRoomDB();
         Task<ChatRoomDTO> TrySaveChat(string chatName);
     }
 }

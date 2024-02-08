@@ -3,12 +3,10 @@ using Grains.DTOs;
 using Client.Contracts;
 using GrainInterfaces;
 using Microsoft.AspNetCore.Mvc;
-using Client.Repositories;
 using Microsoft.Extensions.Logging;
-using Orleans.Runtime;
-using Orleans.Streams;
 using Microsoft.IdentityModel.Tokens;
 using Client.Repositories.Interfaces;
+using Grains;
 
 namespace Client.Controllers
 {
@@ -38,33 +36,53 @@ namespace Client.Controllers
         {
             var users = await _userRepository.GetAllUsers();
 
-            ConcurrentBag<UserPersonalDataDTO> usersResponse = new ConcurrentBag<UserPersonalDataDTO>();
+            List<UserPersonalDataDTO> usersResponse = new ();
 
-            await Parallel.ForEachAsync(users, async (userState, ct) =>
+            foreach(var user in users)
             {
-                usersResponse.Add(await userState.GetUserPersonalStateDTO());
-            });
+                var userGrain = _grainFactory.GetGrain<IUser>(user.Username);
+                await userGrain.GetUserPersonalStateDTO().ContinueWith(dto => usersResponse.Add(dto.Result));
+            }
 
             return Ok(usersResponse);
         }
 
-        [HttpGet]
+        /*var users = await _userRepository.GetAllUsers();
+
+        ConcurrentBag<UserPersonalDataDTO> usersResponse = new ConcurrentBag<UserPersonalDataDTO>();
+
+        await Parallel.ForEachAsync(users, async (user, ct) =>
+            {
+            var userGrain = _grainFactory.GetGrain<IUser>(user.Username);
+            usersResponse.Add(await userGrain.GetUserState().Result.State.GetUserPersonalStateDTO());
+        });
+
+            return Ok(usersResponse);*/
+
+        [HttpGet("users-by")]
         public async Task<IActionResult> SearchUsersBySubstring([FromQuery(Name = "search")] string search)
         {
             var users = await _userRepository.GetAllUsersBySubstring(search);
 
-            ConcurrentBag<UserPersonalDataDTO> usersResponse = new ConcurrentBag<UserPersonalDataDTO>();
+            List<UserPersonalDataDTO> usersResponse = new();
 
-            await Parallel.ForEachAsync(users, async (userState, ct) =>
+            foreach (var user in users)
             {
-                usersResponse.Add(await userState.GetUserPersonalStateDTO());
-            });
+                var userGrain = _grainFactory.GetGrain<IUser>(user.Username);
+                await userGrain.GetUserPersonalStateDTO().ContinueWith(dto => usersResponse.Add(dto.Result));
+            }
 
             return Ok(usersResponse);
-
-
         }
 
+
+        /*ConcurrentBag<UserPersonalDataDTO> usersResponse = new ConcurrentBag<UserPersonalDataDTO>();
+
+        await Parallel.ForEachAsync(users, async (user, ct) =>
+            {
+            var userGrain = _grainFactory.GetGrain<IUser>(user.Username);
+            //usersResponse.Add(await userGrain.GetUserState().Result.State.GetUserPersonalStateDTO());
+        });*/
 
 
         [HttpGet("master-user")]
@@ -72,10 +90,11 @@ namespace Client.Controllers
         {
             var newUser = _grainFactory.GetGrain<IUser>("orleans.master");
             // Persists user's data if it does not exist already
-            var master = await newUser.TryCreateUser("Orleans Master", "orleans.master");
+            var master = await newUser.TryCreateUserRetDTO("Orleans Master", "orleans.master");
             try
             {
-                await _userRepository.AddUser(await newUser.GetUserState());
+                await newUser.ObtainUserDB().ContinueWith(userdb => _userRepository.AddUser(userdb.Result));
+                //_userRepository.AddUser(newUser.GetUserState().Result.State.ObtainUserDB());
             }
             catch (Exception ex)
             {
@@ -96,11 +115,11 @@ namespace Client.Controllers
 
             var newUser = _grainFactory.GetGrain<IUser>(request.Username);
             // Persists user's data if it does not exist already
-            await newUser.TryCreateUser(request.Name, request.Username);
+            await newUser.TryCreateUserRetDTO(request.Name, request.Username);
 
             try
             {
-                await _userRepository.AddUser(await newUser.GetUserState());
+               await newUser.ObtainUserDB().ContinueWith(userdb => _userRepository.AddUser(userdb.Result));
             }
             catch (Exception ex)
             {
@@ -110,10 +129,10 @@ namespace Client.Controllers
             return Ok(request.Username);
         }
 
-
-        public IActionResult RetriveChatsPreviewsBy(string username)
+        [HttpGet("chats-preview-by")]
+        public async Task<IActionResult> RetriveChatsPreviewsBy([FromQuery(Name = "search")] string username)
         {
-            if (!String.IsNullOrEmpty(username))
+            if (String.IsNullOrEmpty(username))
             {
                 throw new ArgumentException("...");
             }
@@ -127,23 +146,25 @@ namespace Client.Controllers
             //var response = new List<ChatPreviewDTO>();  
             var response = new List<UserMessage>(); //here there is the chat in which the mess has been written
 
-            var chats = userGrain.GetUserState().Result.Chats;
+            var chats = userGrain.GetUserChats().Result;
 
             foreach (var chat in chats)
             {
                 var chatGrain = _grainFactory.GetGrain<IChatRoom>(chat);
-                var lastmessage = chatGrain.GetChatState().Result.Messages.Last();
-                //var chatPreview = new ChatPreviewDTO(chat, lastmessage);
-                response.Add(lastmessage);
+                
+                /*var mess = await chatGrain.GetMessages();
+                response.Add(mess.Last());*/
+
+                await chatGrain.GetMessages().ContinueWith(messages => response.Add(messages.Result.Last()));
             }
 
             return Ok(response);
         }
 
         [HttpGet("{username}/friends")]
-        public IActionResult RetriveUserFriends(string username)
+        public async Task<IActionResult> RetriveUserFriends(string username)
         {
-            if (!String.IsNullOrEmpty(username))
+            if (String.IsNullOrEmpty(username))
             {
                 throw new ArgumentException("...");
             }
@@ -154,20 +175,21 @@ namespace Client.Controllers
 
             var userGrain = _grainFactory.GetGrain<IUser>(username);
 
-            return Ok(userGrain.GetUserState().Result.Friends);
+
+            return Ok(userGrain.GetUserFriends().Result);
         }
 
-        [HttpPost("send-message")]        
-        
-        public async Task<IActionResult> SendMessage([FromBody]UserMessage message)
-        {
+        [HttpPost("send-message")]      
+        public async Task SendMessage([FromBody]UserMessage message)
+         {
             if (message.TextMessage.IsNullOrEmpty())
             {
                 throw new Exception("...");
             }
             var userGrain = _grainFactory.GetGrain<IUser>(message.AuthorUsername);
+            var chat = _grainFactory.GetGrain<IChatRoom>(message.ChatRoomName);
+            await chat.GetChatname().ContinueWith(name => Console.WriteLine(name.Result));
             await userGrain.SendMessage(message);
-            return Ok(message);
         }
 
         

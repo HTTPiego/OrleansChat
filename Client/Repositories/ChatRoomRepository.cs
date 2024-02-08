@@ -34,33 +34,35 @@ namespace Client.Repositories
             GC.SuppressFinalize(this);
         }
 
-        public async Task<List<ChatRoomState>> GetAllChatRooms()
+        public async Task<List<ChatRoomDB>> GetAllChatRooms()
         {
             return await _context.Chats.ToListAsync();
         }
 
-        public async Task<ChatRoomState?> GetChatRoomBy(string chatname)
+        public async Task<ChatRoomDB?> GetChatRoomBy(string chatname)
         {
             return await _context.Chats.Where(chat => chat.ChatName.Equals(chatname)).FirstOrDefaultAsync();
         }
 
-        public async Task<ChatRoomState> AddChatRoom(ChatRoomState chat)
+        public ChatRoomDB AddChatRoom(ChatRoomDB chat)
         {
             if (_context.Chats.Contains(chat))
             {
                 throw new ArgumentException("The chat \"" + chat.ChatName + "\" already exists");
             }
-            if(chat != null)
+            if(chat == null)
                 throw new ArgumentNullException(nameof(chat));
-            _context.Chats.Add(chat!);
-            return await Task.FromResult(chat!);
+            var response = _context.Chats.Add(chat!);
+            _context.SaveChanges();
+            return response.Entity;
         }
 
-        public async Task<ChatRoomState> RemoveChatRoom(ChatRoomState chat)
+        public async Task<ChatRoomDB> RemoveChatRoom(ChatRoomDB chat)
         {
             if (chat != null)
                 throw new ArgumentNullException(nameof(chat));
             _context.Chats.Remove(chat!);
+            await _context.SaveChangesAsync();
             return await Task.FromResult(chat!);
         }
 

@@ -7,25 +7,17 @@ namespace Grains.GrainState
     [GenerateSerializer]
     public class UserState
     {
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        [Key]
         [Id(0)]
-        public Guid IdChatRoom { get; set; }
-
-        [Id(1)]
         public string Username { get; set; }
 
-        [NotMapped]
-        [Id(2)]
+        [Id(1)]
         public string Name { get; set; } = default!;
 
-        [NotMapped]
-        [Id(3)]
-        public List<string> Chats = new();
+        [Id(2)]
+        public List<string> Chats { get; set; } = new();
 
-        [NotMapped]
-        [Id(4)]
-        public List<string> Friends = new();
+        [Id(3)]
+        public List<string> Friends { get; set; } = new();
 
         public async Task<UserDTO> GetUserStateDTO()
         {
@@ -37,10 +29,33 @@ namespace Grains.GrainState
                 ));
         }
 
-        public async Task<UserPersonalDataDTO> GetUserPersonalStateDTO()
+        /*public async Task<UserPersonalDataDTO> GetUserPersonalStateDTO()
         {
             return await Task.FromResult(new UserPersonalDataDTO(Name, Username));
+        }*/
+
+        public UserDB ObtainUserDB() 
+        {
+            return new UserDB(Username);
         }
 
     }
+
+    /*public class UserDB
+    {
+        //[DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        [Key]
+        public Guid UserId { get; set; }
+
+        public string Username { get; set; } = default!;
+
+        public UserDB() { }
+        
+        public UserDB(string username) 
+        {
+            UserId = new Guid();
+            Username = username;
+        }
+
+    }*/
 }

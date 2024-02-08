@@ -1,4 +1,5 @@
-﻿using Grains.GrainState;
+﻿using Grains;
+using Grains.GrainState;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -10,12 +11,12 @@ namespace Client.Repositories.Interfaces
 {
     public interface IChatRoomRepository : IDisposable
     {
-        Task<List<ChatRoomState>> GetAllChatRooms();
+        Task<List<ChatRoomDB>> GetAllChatRooms();
 
-        Task<ChatRoomState?> GetChatRoomBy(string chatname);
+        Task<ChatRoomDB?> GetChatRoomBy(string chatname);
 
-        Task<ChatRoomState> AddChatRoom(ChatRoomState chat);
+        ChatRoomDB AddChatRoom(ChatRoomDB chat);
 
-        Task<ChatRoomState> RemoveChatRoom(ChatRoomState chat);
+        Task<ChatRoomDB> RemoveChatRoom(ChatRoomDB chat);
     }
 }

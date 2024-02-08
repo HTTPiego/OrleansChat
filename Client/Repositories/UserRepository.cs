@@ -1,5 +1,5 @@
 ﻿using Client.Repositories.Interfaces;
-using Grains.GrainState;
+using Grains;
 using Microsoft.EntityFrameworkCore;
 
 namespace Client.Repositories
@@ -33,36 +33,38 @@ namespace Client.Repositories
             GC.SuppressFinalize(this);
         }
 
-        public async Task<List<UserState>> GetAllUsers()
+        public async Task<List<UserDB>> GetAllUsers()
         {
             return await _context.Users.ToListAsync();
         }
 
-        public async Task<List<UserState>> GetAllUsersBySubstring(string substring)
+        public async Task<List<UserDB>> GetAllUsersBySubstring(string substring)
         {
             return await _context.Users.Where(user => user.Username.Contains(substring.ToLower())).ToListAsync();
         }
 
-        public async Task<UserState> UserIsRegistered(string username)
+        public async Task<UserDB> UserIsRegistered(string username)
         {
             return await Task.FromResult(_context.Users.Where(user => user.Username.Equals(username)).ToList().FirstOrDefault()!);
         }
 
-        public async Task<UserState> AddUser(UserState user)
+        public UserDB AddUser(UserDB user)
         {
-            if (_context.Users.Contains(user))
-                throw new ArgumentException("The user " + user.Name + " already exists");
-            if (user != null)
+            if (user == null)
                 throw new ArgumentNullException(nameof(user));
-            _context.Users.Add(user!);
-            return await Task.FromResult(user!);
+            if (_context.Users.Contains(user))
+                throw new ArgumentException("The user " + user.Username + " already exists");
+            var response = _context.Users.Add(user!);
+            _context.SaveChanges();
+            return response.Entity;
         }
 
-        public async Task<UserState> RemoveUser(UserState user)
+        public async Task<UserDB> RemoveUser(UserDB user)
         {
             if (user != null)
                 throw new ArgumentNullException(nameof(user));
             _context.Users.Remove(user!);
+            await _context.SaveChangesAsync();
             return await Task.FromResult(user!);
         }
 

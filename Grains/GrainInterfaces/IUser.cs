@@ -7,12 +7,22 @@ namespace GrainInterfaces
 {
     public interface IUser : IGrainWithStringKey //IGrainWithGuidKey
     {
-        Task<UserDTO> TryCreateUser(string name, string username);
+        Task<UserDTO> TryCreateUserRetDTO(string name, string username);
+        Task<UserState> TryCreateUserRetState(string name, string username);
         Task JoinChatRoom(string chatRoomId);
         Task AddFriend(string username);
         Task SendMessage(UserMessage message);
 
-        Task<UserState> GetUserState();
+        Task<IPersistentState<UserState>> GetUserState();
+
+        Task<UserPersonalDataDTO> GetUserPersonalStateDTO();
+
+        Task<string> GetUsername();
+
+        Task<List<string>> GetUserFriends();
+
+        Task<List<string>> GetUserChats();
+        Task<UserDB> ObtainUserDB();
         /*Task<UserDTO> GetUserStateDTO();
         
         Task<UserPersonalDataDTO> GetUserPersonalStateDTO();*/

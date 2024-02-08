@@ -3,16 +3,22 @@ using GrainInterfaces;
 using Grains.GrainState;
 using Microsoft.Extensions.Logging;
 using Orleans.Runtime;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Xml.Linq;
+using Orleans;
+using Orleans.Streams;
 
 namespace Grains
 {
+
     public class User : Grain, IUser
     {
         //TODO: USE GUID AS KEY!!!!
 
         private readonly ILogger<User> _logger;
         private readonly IGrainFactory _grainFactory;
-        private readonly IPersistentState<UserState> _userState;
+        private IPersistentState<UserState> _userState;
 
         public User(
             [PersistentState("state")] IPersistentState<UserState> userState,
@@ -30,7 +36,7 @@ namespace Grains
             await base.OnActivateAsync(cancellationToken);
         }
         
-        public async Task<UserDTO> TryCreateUser(string name, string username)
+        public async Task<UserDTO> TryCreateUserRetDTO(string name, string username)
         {
             if (String.IsNullOrEmpty(_userState.State.Username))
             {
@@ -49,7 +55,27 @@ namespace Grains
 
             return await _userState.State.GetUserStateDTO();
         }
-        
+
+        public async Task<UserState> TryCreateUserRetState(string name, string username)
+        {  
+            if (String.IsNullOrEmpty(_userState.State.Username))
+            {
+
+                _userState.State.Username = username;
+                _userState.State.Name = name;
+
+                await _userState.WriteStateAsync();
+
+                _logger.LogInformation($"{username}'s data has been persisted.");
+            }
+            else
+            {
+                _logger.LogWarning($"{username} already exists.");
+            }
+
+            return _userState.State;
+        }
+
         public Task<List<string>> ReadNotifications()
         {
             var notifier = _grainFactory.GetGrain<IUserNotifier>(this.GetPrimaryKeyString());
@@ -59,14 +85,23 @@ namespace Grains
         public async Task SendMessage(UserMessage message)
         {
             var chatname = message.ChatRoomName;
+            Console.WriteLine("QUI");
             if (_userState.State.Chats.Contains(chatname))
             {
+                Console.WriteLine("QUO");
+                //_grainFactory.GetGrain<IChatRoom>(message.ChatRoomName);
                 var streamProvider = this.GetStreamProvider("chat");
-                var chatStream = streamProvider.GetStream<UserMessage>(StreamId.Create("ROOM", chatname));
+                //Console.WriteLine("QUA");
+                var chat = _grainFactory.GetGrain<IChatRoom>(message.ChatRoomName);
+                var chatStream = streamProvider.GetStream<UserMessage>(StreamId.Create("ROOM", chat.GetPrimaryKeyString()));
+                Console.WriteLine("QUA");
                 await chatStream.OnNextAsync(message);
-                await Task.CompletedTask;
+                Console.WriteLine("BINGO");
             }
-            await Task.FromException(new ArgumentException("User is not allowed to send message to this chat or chat does not exist"));
+            else
+            {
+                await Task.FromException(new ArgumentException("User is not allowed to send message to this chat or chat does not exist"));
+            }
         }
 
 
@@ -79,6 +114,7 @@ namespace Grains
             else
             {
                 _userState.State.Chats.Add(chatRoomId);
+                await _userState.WriteStateAsync();
                 _logger.LogInformation($"Chatroom {chatRoomId} has been added to {this.GetPrimaryKeyString()}'s chats list");
             }
 
@@ -102,9 +138,38 @@ namespace Grains
             
         }
 
-        public async Task<UserState> GetUserState()
+        public async Task<UserPersonalDataDTO> GetUserPersonalStateDTO()
         {
-            return await Task.FromResult( _userState.State );
+            var name = _userState.State.Name;
+            var username = _userState.State.Username;
+            return await Task.FromResult(new UserPersonalDataDTO(name, username));
+        }
+
+        public async Task<IPersistentState<UserState>> GetUserState()
+        {
+            await _userState.ReadStateAsync();
+            return await Task.FromResult(_userState);
+        }
+
+        public async Task<List<string>> GetUserFriends()
+        {
+            return await Task.FromResult(_userState.State.Friends);
+        }
+
+        public async Task<List<string>> GetUserChats()
+        {
+            return await Task.FromResult(_userState.State.Chats);
+        }
+
+        public async Task<string> GetUsername()
+        {
+            await _userState.ReadStateAsync();
+            return await Task.FromResult(_userState.State.Username);
+        }
+
+        public async Task<UserDB> ObtainUserDB()
+        {
+            return await Task.FromResult(new UserDB(_userState.State.Username));
         }
 
         /*public async Task<UserDTO> GetUserStateDTO()
@@ -118,4 +183,27 @@ namespace Grains
         }*/
 
     }
+
+    [GenerateSerializer]
+    public class UserDB
+    {
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        [Key]
+        [Id(0)]
+        public Guid UserId { get; set; }
+
+        [Id(1)]
+        public string Username { get; set; }
+
+        public UserDB() { }
+
+        public UserDB(string username)
+        {
+            //UserId = new Guid();
+            Username = username;
+        }
+
+    }
+
+
 }
