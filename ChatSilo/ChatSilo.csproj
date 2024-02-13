@@ -24,6 +24,7 @@
     <PackageReference Include="Microsoft.Orleans.Server" Version="7.2.4" />
     <PackageReference Include="Microsoft.Orleans.Streaming" Version="8.0.0" />
     <PackageReference Include="Orleans.Providers.MongoDB" Version="7.6.0" />
+    <PackageReference Include="SignalR.Orleans" Version="7.2.0" />
   </ItemGroup>
 
   <ItemGroup>

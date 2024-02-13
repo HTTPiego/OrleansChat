@@ -8,6 +8,9 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Xml.Linq;
 using Orleans;
 using Orleans.Streams;
+using Client.SignalR;
+using SignalR.Orleans.Core;
+using Microsoft.AspNetCore.SignalR;
 
 namespace Grains
 {
@@ -19,6 +22,8 @@ namespace Grains
         private readonly ILogger<User> _logger;
         private readonly IGrainFactory _grainFactory;
         private IPersistentState<UserState> _userState;
+        private readonly IHubContext<ChatHub> _hubContext;
+        private readonly ChatHub _chatHub;
 
         public User(
             [PersistentState("state")] IPersistentState<UserState> userState,
@@ -85,18 +90,14 @@ namespace Grains
         public async Task SendMessage(UserMessage message)
         {
             var chatname = message.ChatRoomName;
-            Console.WriteLine("QUI");
             if (_userState.State.Chats.Contains(chatname))
             {
-                Console.WriteLine("QUO");
-                //_grainFactory.GetGrain<IChatRoom>(message.ChatRoomName);
                 var streamProvider = this.GetStreamProvider("chat");
-                //Console.WriteLine("QUA");
                 var chat = _grainFactory.GetGrain<IChatRoom>(message.ChatRoomName);
-                var chatStream = streamProvider.GetStream<UserMessage>(StreamId.Create("ROOM", chat.GetPrimaryKeyString()));
-                Console.WriteLine("QUA");
+                var chatStream = streamProvider.GetStream<UserMessage>(StreamId.Create("ROOM", chatname));
                 await chatStream.OnNextAsync(message);
-                Console.WriteLine("BINGO");
+
+                //await _hubContext.Clients.All.SendAsync("ReceiveMessage", message);
             }
             else
             {

@@ -11,6 +11,7 @@
     <PackageReference Include="Microsoft.Orleans.Sdk" Version="7.2.3" />
     <PackageReference Include="Microsoft.Orleans.Streaming" Version="7.2.3" />
     <PackageReference Include="NRedisStack" Version="0.10.1" />
+    <PackageReference Include="SignalR.Orleans" Version="7.2.0" />
   </ItemGroup>
 
   <ItemGroup>

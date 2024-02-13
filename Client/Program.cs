@@ -32,6 +32,7 @@ builder.Services.AddDbContext<ChatDbContext>(options =>
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IChatRoomRepository, ChatRoomRepository>();
+builder.Services.AddSingleton<ChatHub>();
 
 builder.Services.AddControllers(); //AddControllersWithViews
 builder.Services.AddCors(o => o.AddPolicy("CorsPolicy", b =>
