@@ -1,6 +1,8 @@
 ﻿using Client.Repositories;
 using Client.Repositories.Interfaces;
+using Client.SignalR;
 using GrainInterfaces;
+using Grains;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
@@ -17,11 +19,17 @@ namespace Client.Controllers
 
         private readonly ILogger<ChatRoomsController> _logger;
 
-        public ChatRoomsController(IChatRoomRepository chatRoomRepository, IGrainFactory grainFactory, ILogger<ChatRoomsController> logger)
+        private readonly ChatHub _chatHub;
+
+        public ChatRoomsController(IChatRoomRepository chatRoomRepository, 
+            IGrainFactory grainFactory, 
+            ILogger<ChatRoomsController> logger,
+            ChatHub chatHub)
         {
             _chatRoomRepository = chatRoomRepository;
             _grainFactory = grainFactory;
             _logger = logger;   
+            _chatHub = chatHub;
         }
 
         /*[HttpGet("{chatRoomId}/users")]
@@ -42,6 +50,18 @@ namespace Client.Controllers
             return Ok($"Success: Client wants to add {username} to chat");
         }
 
+
+        [HttpGet("{chatname}/get-messages")]
+        public async Task<IActionResult> GetMessages(string chatname)
+        {
+            var chat = _grainFactory.GetGrain<IChatRoom>(chatname);
+            var messages = await chat.GetMessages();
+
+            await _chatHub.Groups.AddToGroupAsync(_chatHub.Context.ConnectionId, chatname);
+
+            return Ok(messages);
+
+        }
 
 
         [HttpGet("{username1}/befriend/{username2}")]

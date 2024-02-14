@@ -1,5 +1,4 @@
-﻿using ChatSilo.DTOs;
-using GrainInterfaces;
+﻿using GrainInterfaces;
 using Grains.DTOs;
 using Grains.GrainState;
 using Microsoft.Extensions.Logging;
@@ -8,12 +7,14 @@ using Orleans.Streams;
 using Orleans.Utilities;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Client.SignalR;
+using SignalR.Orleans.Core;
 
 namespace Grains
 {
     // IF we add the following attribute, the ChatRoom is automatically subscribed to the stream with namespace "ROOM"
     // and GUID is the same as the ChatRoom GUID. So there is no need to save the stream
-    
+
     [ImplicitStreamSubscription("ROOM")] 
     public class ChatRoom : Grain, IChatRoom
     {
@@ -23,19 +24,25 @@ namespace Grains
         private readonly IGrainFactory _grainFactory;
         private readonly ObserverManager<IUserNotifier> _userNotifiersManager;
         private IPersistentState<ChatRoomState> _chatroomState;
+        //private readonly HubContext<ChatHub> _hubContext;
+        //private readonly ChatHub _chatHub;
         /*private readonly List<string> _chatRoomMembers = new();
         private readonly List<string> _messages = new();
         private bool _isGroup = false;*/
 
         public ChatRoom([PersistentState("state")] IPersistentState<ChatRoomState> chatroomState,
             IGrainFactory grainFactory, 
-            ILogger<IUserNotifier> logger, 
-            ILogger<ChatRoom> chatroomLogger)
+            ILogger<IUserNotifier> logger,
+            ILogger<ChatRoom> chatroomLogger/*,
+            HubContext<ChatHub> hubContext,
+            ChatHub chatHub*/)
         {
             _logger = chatroomLogger;
             _grainFactory = grainFactory;
             _userNotifiersManager = new ObserverManager<IUserNotifier>(TimeSpan.FromMinutes(5), logger);
             _chatroomState = chatroomState;
+            //_hubContext = hubContext;
+            //_chatHub = chatHub;
         }
 
         /*public async override Task OnActivateAsync(CancellationToken cancellationToken)
@@ -65,9 +72,8 @@ namespace Grains
 
                 var streamProvider = this.GetStreamProvider("chat");
 
-                var streamId = StreamId.Create("ROOM", this.GetPrimaryKeyString());
+                var streamId = StreamId.Create("ROOM", chatname);
                 var stream = streamProvider.GetStream<UserMessage>(streamId);
-                //await stream.SubscribeAsync(this);
                 await stream.SubscribeAsync(OnNextAsync);
             }
 
@@ -215,13 +221,27 @@ namespace Grains
         {
             _chatroomState.State.Messages.Add(message);
             await _chatroomState.WriteStateAsync();
-            _logger.LogCritical("CIAO @#@#@#@#@#@#@ CIAO ======> CIAO");
-            _logger.LogCritical("_______________________________________________________________");
-            var notification = "New message!";
-            await _userNotifiersManager.Notify( notifier => notifier.ReceiveNotification(notification),
-                                                 notifier => ! notifier.GetPrimaryKeyString().Equals(message.AuthorUsername));
-            //! notifier.GetPrimaryKey().Equals(message.AuthorUsername)); 
+            _logger.LogCritical("____________________________CIAO @#@#@#@#@#@#@ CIAO ======> CIAO___________________________________");
+
+            /*foreach (var notifier in _userNotifiersManager) 
+            {
+                var notiferOwner = await notifier.GetOwnerUsername();
+                if (!notiferOwner.Equals(message.AuthorUsername))
+                {
+                    await notifier.ReceiveNotification("New message!");
+                }
+            }*/
+
+            await _userNotifiersManager.Notify(notifier => notifier.ReceiveNotification("New message!"),
+                                                 notifier => !notifier.GetPrimaryKeyString().Equals(message.AuthorUsername));
+
             //if user notifier is not that one of the author
+
+            /*var msg = new InvocationMessage("ReceiveMessage", new object?[] { message });
+            await _hubContext.Group(message.ChatRoomName).Send(msg);*/
+
+            //await _hubContext.Clients.All.SendAsync("ReceiveMessage", message);
+
             await Task.CompletedTask;
         }
 

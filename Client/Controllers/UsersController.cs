@@ -7,6 +7,9 @@ using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Client.Repositories.Interfaces;
 using Grains;
+using Client.SignalR;
+using Microsoft.AspNetCore.SignalR;
+using SignalR.Orleans.Core;
 
 namespace Client.Controllers
 {
@@ -22,12 +25,18 @@ namespace Client.Controllers
 
         private ILogger<UsersController> _logger;
 
+        private readonly IHubContext<ChatHub, IChatClient> _hubContext;
 
-        public UsersController(IUserRepository userRepository, IGrainFactory grainFactory, ILogger<UsersController> logger)
+
+        public UsersController(IUserRepository userRepository, 
+                                IGrainFactory grainFactory, 
+                                ILogger<UsersController> logger,
+                                IHubContext<ChatHub, IChatClient> hubContext)
         {
             _userRepository = userRepository;
             _grainFactory = grainFactory;
             _logger = logger;
+            _hubContext = hubContext;
         }
 
         //TODO refactor both GetAllUsers and SearchUsersByUsername, only difference is match pattern
@@ -190,9 +199,11 @@ namespace Client.Controllers
             var chat = _grainFactory.GetGrain<IChatRoom>(message.ChatRoomName);
             await chat.GetChatname().ContinueWith(name => Console.WriteLine(name.Result));
             await userGrain.SendMessage(message);
+
+            await _hubContext.Clients.All.ReveiceMessage(message);
+            //await _hubContext.Clients.Group(message.ChatRoomName).ReveiceMessage(message);
         }
 
-        
 
     }
 }
