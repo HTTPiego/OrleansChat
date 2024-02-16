@@ -3,7 +3,9 @@ using Client.Repositories.Interfaces;
 using Client.SignalR;
 using GrainInterfaces;
 using Grains;
+using Grains.DTOs;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 
 namespace Client.Controllers
@@ -19,26 +21,20 @@ namespace Client.Controllers
 
         private readonly ILogger<ChatRoomsController> _logger;
 
-        private readonly ChatHub _chatHub;
-
         public ChatRoomsController(IChatRoomRepository chatRoomRepository, 
             IGrainFactory grainFactory, 
-            ILogger<ChatRoomsController> logger,
-            ChatHub chatHub)
+            ILogger<ChatRoomsController> logger)
         {
             _chatRoomRepository = chatRoomRepository;
             _grainFactory = grainFactory;
             _logger = logger;   
-            _chatHub = chatHub;
         }
-
-        /*[HttpGet("{chatRoomId}/users")]
-        public async Task<IActionResult> GetAllUsersForChatRoom(string chatRoomId)
+        
+        /*[HttpGet]
+        public async Task<IActionResult> SendMessageToClient()
         {
-            var chatroom = _grainFactory.GetGrain<IChatRoom>(chatRoomId);
-            var members = await chatroom.GetMembers();
-
-            return Ok(new {Members = members});
+            await _chatHub.Clients.All.SendAsync("chatRoomUpdate", "This is the new message");
+            return Ok($"Success: Message has been sent to client in frontend");
         }*/
         
         [HttpGet("add/{username}/to/{chatroom}")]
@@ -56,11 +52,24 @@ namespace Client.Controllers
         {
             var chat = _grainFactory.GetGrain<IChatRoom>(chatname);
             var messages = await chat.GetMessages();
-
-            await _chatHub.Groups.AddToGroupAsync(_chatHub.Context.ConnectionId, chatname);
-
+            
+            
             return Ok(messages);
-
+        }
+        
+        [HttpGet("{chatname}")]
+        public IActionResult GetCompleteChatRoom(string chatname)
+        {
+            ChatRoomDTO chat;
+            if (_chatRoomRepository.GetChatRoomBy(chatname) == null)
+            {
+                return StatusCode(400, "Chatname does not exist");
+            }
+            
+            var chatGrain = _grainFactory.GetGrain<IChatRoom>(chatname);
+            chat =  chatGrain.GetChatRoomStateDTO().Result;
+            
+            return Ok(chat);
         }
 
 
@@ -101,6 +110,5 @@ namespace Client.Controllers
 
             return Ok(new { Message = $"User {username1} has befriended {username2} successfully and a chat room has been created." });
         }
-
     }
 }

@@ -20,6 +20,8 @@
     "@angular/router": "^17.0.0",
     "@microsoft/signalr": "^8.0.0",
     "lucide-angular": "^0.294.0",
+    "moment": "^2.30.1",
+    "ngx-rerender": "^1.2.0",
     "primeng": "^17.0.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",

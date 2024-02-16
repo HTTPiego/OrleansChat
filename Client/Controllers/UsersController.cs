@@ -25,13 +25,13 @@ namespace Client.Controllers
 
         private ILogger<UsersController> _logger;
 
-        private readonly IHubContext<ChatHub, IChatClient> _hubContext;
+        private readonly IHubContext<ChatHub> _hubContext;
 
 
         public UsersController(IUserRepository userRepository, 
                                 IGrainFactory grainFactory, 
                                 ILogger<UsersController> logger,
-                                IHubContext<ChatHub, IChatClient> hubContext)
+                                IHubContext<ChatHub> hubContext)
         {
             _userRepository = userRepository;
             _grainFactory = grainFactory;
@@ -139,7 +139,7 @@ namespace Client.Controllers
         }
 
         [HttpGet("chats-preview-by")]
-        public async Task<IActionResult> RetriveChatsPreviewsBy([FromQuery(Name = "search")] string username)
+        public async Task<IActionResult> RetriveChatsPreviewsBy([FromQuery(Name = "username")] string username)
         {
             if (String.IsNullOrEmpty(username))
             {
@@ -151,20 +151,16 @@ namespace Client.Controllers
             }
 
             var userGrain = _grainFactory.GetGrain<IUser>(username);
-
-            //var response = new List<ChatPreviewDTO>();  
-            var response = new List<UserMessage>(); //here there is the chat in which the mess has been written
+            
+            var response = new List<ChatPreviewDTO>(); //here there is the chat in which the mess has been written
 
             var chats = userGrain.GetUserChats().Result;
 
             foreach (var chat in chats)
             {
                 var chatGrain = _grainFactory.GetGrain<IChatRoom>(chat);
-                
-                /*var mess = await chatGrain.GetMessages();
-                response.Add(mess.Last());*/
 
-                await chatGrain.GetMessages().ContinueWith(messages => response.Add(messages.Result.Last()));
+                await chatGrain.GetChatRoomPreview().ContinueWith(chatDTO => response.Add(chatDTO.Result));
             }
 
             return Ok(response);
@@ -200,7 +196,8 @@ namespace Client.Controllers
             await chat.GetChatname().ContinueWith(name => Console.WriteLine(name.Result));
             await userGrain.SendMessage(message);
 
-            await _hubContext.Clients.All.ReveiceMessage(message);
+            await _hubContext.Clients.All.SendAsync("chatRoomUpdate", message);
+            //await _hubContext.Clients.All.ReveiceMessage(message);
             //await _hubContext.Clients.Group(message.ChatRoomName).ReveiceMessage(message);
         }
 

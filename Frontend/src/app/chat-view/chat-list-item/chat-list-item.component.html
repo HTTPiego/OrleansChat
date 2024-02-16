@@ -1,14 +1,14 @@
 <div [ngClass]="{'chat-list-item':true, 'selected':isSelected}">
     <div class="chat-list-item--avatar-container">
-        <avatar [name]="chatItem.chatName" />
+        <avatar [name]="chatItem.chatId.split('_')[1].split('.').join(' ')" [size]="'4rem'" />
     </div>
     <div class="chat-list-item--info-container">
         <div class="chat-list-item--info-header">
-            <p class="chat-name"> {{ chatItem.chatName }} </p>
-            <p class="last-message-time"> {{ chatItem.lastMessageTime }} </p>
+            <p class="chat-name"> {{ chatItem.chatId.split('_')[1].split('.').join(" ").toUpperCase() }} </p>
+            <p class="last-message-time"> {{ chatItem.lastMessage ? moment(chatItem.lastMessage.timestamp).calendar() : '' }} </p>
         </div>
         <div class="chat-list-item--info-message">
-            {{ chatItem.lastMessage }}
+            {{ chatItem.lastMessage ? chatItem.lastMessage.textMessage : 'There are no messages yet!' }}
         </div>
     </div>
     <badge [number]="chatItem.pendingMessages" />

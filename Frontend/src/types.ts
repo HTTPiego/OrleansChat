@@ -1,20 +1,20 @@
 export interface ChatListItem {
     chatId: string
-    chatName: string
     isGroup: boolean
-    lastSenderName: string
-    lastSenderUsername: string
-    lastMessage: string
-    lastMessageTime: string
+    lastMessage: UserMessage
     pendingMessages: number
 }
 
-export class Message {
-
+export class UserMessage {
+    authorUsername: string
+    textMessage: string
+    timestamp: Date
+    chatRoomName: string
 }
 
 export class ChatRoom {
-
+    chatName: string;
+    messages: UserMessage[]
 }
 
 export class UserPersonalData {

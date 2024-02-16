@@ -24,7 +24,7 @@ namespace Grains.GrainState
 
         public async Task<ChatRoomDTO> GetChatRoomStateDTO()
         {
-            return await Task.FromResult(new ChatRoomDTO(ChatName, ChatRoomMembers));
+            return await Task.FromResult(new ChatRoomDTO(ChatName, Messages));
         }
 
         public ChatRoomDB ObtainChatRoomDB() 

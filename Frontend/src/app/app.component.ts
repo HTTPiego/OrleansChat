@@ -24,11 +24,11 @@ export class AppComponent implements OnInit{
 
   ngOnInit() {
       // Sets master user to local storage if it is not set
-      if (localStorage.getItem('master') == null) {
+      if (sessionStorage.getItem('master') == null) {
           this.httpService.initializeMasterUser()
               .subscribe({
                   next: res => {
-                      localStorage.setItem('master', JSON.stringify(res))
+                      sessionStorage.setItem('master', JSON.stringify(res))
                       this.toastService.add({severity: 'success', detail: 'Master user successfully initialized'})
                   },
                   error: e => this.toastService.add({severity:'error', detail:'An error occurred when initializing master'}),

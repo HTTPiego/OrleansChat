@@ -1,9 +1,10 @@
-import {Component, Input} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {ChatListItemComponent} from "../chat-list-item/chat-list-item.component";
 import {NgClass, NgForOf, NgIf} from "@angular/common";
 import {FullCenteredFlex} from "../../../custom-directives/full-centered-flex.directive";
 import {ChatListItem} from "../../../types";
 import {HttpService} from "../../../services/http-service.service";
+import {ChatroomService} from "../../../services/chatroom.service";
 
 @Component({
   selector: 'chats-list',
@@ -16,22 +17,31 @@ import {HttpService} from "../../../services/http-service.service";
         NgIf
     ],
     providers: [
-        HttpService
+        HttpService, ChatroomService
     ],
   templateUrl: './chats-list.component.html',
   styleUrl: './chats-list.component.sass'
 })
-export class ChatsListComponent {
+export class ChatsListComponent implements OnInit{
+
+    @Output()
+    selectedChatChanged: EventEmitter<string> = new EventEmitter<string>()
 
     selectedChatsOption: 'GROUPS'|'SINGLE' = 'SINGLE'
+    chatsPreviews: ChatListItem[] = []
 
-    constructor(private httpService: HttpService) {
+    constructor(private httpService: HttpService, private chatService: ChatroomService) {
+    }
+
+    ngOnInit() {
+        this.fetchChats()
     }
 
     fetchChats () {
-        this.httpService.getChatsForUser('')
-            .subscribe((data) => {
-
+        this.httpService.getChatsForUser('orleans.master')
+            .subscribe({
+                next: res => this.chatsPreviews = res,
+                error: err => console.log(err)
             })
     }
     onSelectedChatsChange (option: 'GROUPS'|'SINGLE') {
@@ -40,100 +50,9 @@ export class ChatsListComponent {
 
     onSelectChat (chatId: string) {
         this.selectedChat = chatId
+        this.selectedChatChanged.emit(this.selectedChat);
+        this.chatService.selectedChatRoom.next(this.selectedChat)
     }
 
-    chats: ChatListItem[] = [
-        {
-            chatId: 'fran_bruno',
-            chatName: "Bruno Gini",
-            isGroup: false,
-            lastSenderUsername: "franco.suelgaray",
-            lastSenderName: "Franco Suelgaray",
-            lastMessage: "This is the last message sent to Fran. Es muy largo por lo que deberia aplicarse elipsis",
-            lastMessageTime: "1 min ago",
-            pendingMessages:0
-        },
-        {
-            chatId:'fran_pepe',
-            chatName: "Pepe Rodriguez",
-            isGroup: false,
-            lastSenderUsername: 'pepe.rodriguez',
-            lastSenderName: "Pepe Rodriguez",
-            lastMessage: "This is the last message sent to Fran. Es muy largo por lo que deberia aplicarse elipsis",
-            lastMessageTime: "2 hours ago",
-            pendingMessages:5
-        },
-        {
-            chatId:'fran_danna',
-            chatName: "Danna Paola",
-            isGroup: false,
-            lastSenderUsername: 'danna.paola',
-            lastSenderName: "Danna Paola",
-            lastMessage: "This is the last message sent to Fran. Es muy largo por lo que deberia aplicarse elipsis",
-            lastMessageTime: "15 mins ago",
-            pendingMessages:0
-        },
-        {
-            chatId: 'fran_gini',
-            chatName: "Bruno Gini",
-            isGroup: false,
-            lastSenderUsername: "franco.suelgaray",
-            lastSenderName: "Franco Suelgaray",
-            lastMessage: "This is the last message sent to Fran. Es muy largo por lo que deberia aplicarse elipsis",
-            lastMessageTime: "1 min ago",
-            pendingMessages:0
-        },
-        {
-            chatId:'fran_mon',
-            chatName: "Pepe Rodriguez",
-            isGroup: false,
-            lastSenderUsername: 'pepe.rodriguez',
-            lastSenderName: "Pepe Rodriguez",
-            lastMessage: "This is the last message sent to Fran. Es muy largo por lo que deberia aplicarse elipsis",
-            lastMessageTime: "2 hours ago",
-            pendingMessages:10
-        },
-        {
-            chatId:'fran_gonza',
-            chatName: "Danna Paola",
-            isGroup: false,
-            lastSenderUsername: 'danna.paola',
-            lastSenderName: "Danna Paola",
-            lastMessage: "This is the last message sent to Fran. Es muy largo por lo que deberia aplicarse elipsis",
-            lastMessageTime: "15 mins ago",
-            pendingMessages:2
-        },
-        {
-            chatId: 'fran_brun',
-            chatName: "Bruno Gini",
-            isGroup: false,
-            lastSenderUsername: "franco.suelgaray",
-            lastSenderName: "Franco Suelgaray",
-            lastMessage: "This is the last message sent to Fran. Es muy largo por lo que deberia aplicarse elipsis",
-            lastMessageTime: "1 min ago",
-            pendingMessages:0
-        },
-        {
-            chatId:'fran_pep',
-            chatName: "Pepe Rodriguez",
-            isGroup: false,
-            lastSenderUsername: 'pepe.rodriguez',
-            lastSenderName: "Pepe Rodriguez",
-            lastMessage: "This is the last message sent to Fran. Es muy largo por lo que deberia aplicarse elipsis",
-            lastMessageTime: "2 hours ago",
-            pendingMessages:0
-        },
-        {
-            chatId:'fran_dann',
-            chatName: "Danna Paola",
-            isGroup: false,
-            lastSenderUsername: 'danna.paola',
-            lastSenderName: "Danna Paola",
-            lastMessage: "This is the last message sent to Fran. Es muy largo por lo que deberia aplicarse elipsis",
-            lastMessageTime: "15 mins ago",
-            pendingMessages:21
-        },
-    ]
-
-    selectedChat: string = 'fran_bruno'
+    selectedChat: string = ''
 }

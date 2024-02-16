@@ -1,6 +1,6 @@
 <div class="chat-list">
     <div class="chat-list__header" fullCenteredFlex>
-        Search
+
     </div>
     <div class="chat-list__main">
         <div class="chat-list__selector" fullCenteredFlex>
@@ -18,7 +18,7 @@
             </div>
         </div>
         <div class="chat-list__items-list" >
-            <ng-container *ngFor="let item of chats">
+            <ng-container *ngFor="let item of chatsPreviews">
                 <chat-list-item
                     *ngIf="(item.isGroup && selectedChatsOption == 'GROUPS') || (!item.isGroup && selectedChatsOption == 'SINGLE')"
                     [chatItem]="item"

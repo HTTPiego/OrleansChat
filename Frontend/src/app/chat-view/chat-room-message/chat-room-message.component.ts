@@ -1,5 +1,7 @@
 import {Component, Input} from '@angular/core';
 import {NgClass} from "@angular/common";
+import {UserMessage} from "../../../types";
+import moment from "moment";
 
 @Component({
   selector: 'chat-room-message',
@@ -12,9 +14,6 @@ import {NgClass} from "@angular/common";
 })
 export class ChatRoomMessageComponent {
     @Input()
-    message: {
-        message: string,
-        time: string,
-        isOwn: boolean
-    }
+    message: UserMessage
+    protected readonly moment = moment;
 }

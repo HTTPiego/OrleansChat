@@ -38,6 +38,9 @@ namespace GrainInterfaces
         Task<ChatRoomState> GetChatState();
 
         Task<ChatRoomDB> ObtainChatRoomDB();
+        Task<ChatPreviewDTO> GetChatRoomPreview();
+
+        Task<ChatRoomDTO> GetChatRoomStateDTO();
         Task<ChatRoomDTO> TrySaveChat(string chatName);
     }
 }

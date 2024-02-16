@@ -1,12 +1,13 @@
 import {Component, OnInit} from '@angular/core';
 import {FriendCard, UserPersonalData} from "../../types";
 import {UserCardComponent} from "./user-card/user-card.component";
-import {NgForOf} from "@angular/common";
+import {NgForOf, NgIf} from "@angular/common";
 import {LucideAngularModule} from "lucide-angular";
 import {HttpService} from "../../services/http-service.service";
 import {MessageService} from "primeng/api";
 import {ToastModule} from "primeng/toast";
 import {findIndex} from "rxjs";
+import {FormsModule} from "@angular/forms";
 
 @Component({
   selector: 'users-view',
@@ -15,7 +16,9 @@ import {findIndex} from "rxjs";
         UserCardComponent,
         NgForOf,
         LucideAngularModule,
-        ToastModule
+        ToastModule,
+        FormsModule,
+        NgIf
     ],
     providers: [HttpService, MessageService],
   templateUrl: './users-view.component.html',
@@ -23,6 +26,7 @@ import {findIndex} from "rxjs";
 })
 export class UsersViewComponent implements OnInit{
 
+    searchText: string = ''
 
     users: FriendCard[] = []
 
@@ -30,12 +34,31 @@ export class UsersViewComponent implements OnInit{
     }
 
     ngOnInit() {
+        this.getAllUsers()
+    }
+
+    searchUsers() {
+        if (this.searchText != '') {
+            this.httpService.searchUsersByUsername(this.searchText).subscribe({
+                next: res => {
+                    this.users = []
+                    this.setUsers(res)
+                },
+                error: err => this.toastService.add({severity:'error', detail:'An error occurred when searching users'}),
+            })
+        }
+        else {
+            this.users = []
+            this.getAllUsers()
+        }
+    }
+
+    getAllUsers() {
         this.httpService.getAllUsers().subscribe({
             next: res => this.setUsers(res),
             error: err => this.toastService.add({severity:'error', detail:'An error occurred when fetching users'}),
         })
     }
-
     setUsers (usersList:UserPersonalData[]) {
         let storedMaster = this.getMaster()
         console.log(storedMaster.friends)
@@ -70,13 +93,13 @@ export class UsersViewComponent implements OnInit{
 
     getMaster() {
         let master = null
-        let storedMaster = localStorage.getItem("master")
+        let storedMaster = sessionStorage.getItem("master")
         if (storedMaster)
             master = JSON.parse(storedMaster)
         return master
     }
 
     storeMaster(master:any) {
-        localStorage.setItem('master', JSON.stringify(master))
+        sessionStorage.setItem('master', JSON.stringify(master))
     }
 }

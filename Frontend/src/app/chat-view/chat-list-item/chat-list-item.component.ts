@@ -3,6 +3,7 @@ import {NgClass} from "@angular/common";
 import {BadgeComponent} from "../../badge/badge.component";
 import {ChatListItem} from "../../../types";
 import {AvatarComponent} from "../../avatar/avatar.component";
+import moment from "moment/moment";
 
 @Component({
   selector: 'chat-list-item',
@@ -21,4 +22,5 @@ export class ChatListItemComponent {
 
     @Input()
     isSelected:boolean
+    protected readonly moment = moment;
 }

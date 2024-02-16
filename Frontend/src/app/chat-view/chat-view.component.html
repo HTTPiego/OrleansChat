@@ -1,8 +1,8 @@
 <div class="chat-view-container">
     <div class="chat-list-container">
-        <chats-list/>
+        <chats-list (selectedChatChanged)="onSelectedChatChange($event)"/>
     </div>
     <div class="chat-room-container">
-        <chat-room />
+        <chat-room [selectedChatId]="selectedChatId" *mcRerender="selectedChatId"/>
     </div>
 </div>

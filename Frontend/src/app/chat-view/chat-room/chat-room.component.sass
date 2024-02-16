@@ -11,6 +11,9 @@
     &__header
         height: 5rem
         background: white
+        display: flex
+        align-items: center
+        padding-left: 2rem
 
     &__main
         display: flex
@@ -37,6 +40,7 @@
     &__message-editor
         width: 100%
         padding-bottom: 2rem
+
 
 .message-input-area
     width: 100%
@@ -74,3 +78,41 @@
         &:hover
             cursor: pointer
             background: $primary-400
+
+#no-chat-image
+    width: 40%
+    opacity: 0.8
+
+.no-element-container
+    height: 100%
+    display: flex
+    flex-direction: column
+    align-items: center
+    justify-content: center
+
+    p
+        font-weight: bold
+        color: #EAE9EC
+
+    #title
+        font-size: 3.5rem
+        letter-spacing: 0.2rem
+        margin-bottom: 0.5rem
+    #subtitle
+        font-size: 2.5rem
+        margin-bottom: 5rem
+
+.chat-room_info
+    margin-left: 1rem
+    #chat-name
+        color: $secondary-950
+        font-weight: bold
+        font-size: 0.95rem
+        margin-bottom: 0.2rem
+    #chat-id
+        color: $neutral-200
+        font-size: 0.9rem
+        transition: all ease-in-out 0.2ms
+        &:hover
+            color: $neutral-400
+            cursor: copy

@@ -2,17 +2,22 @@
 <div class="user-view-container">
     <div class="user-view__header">
         <div class="search-bar">
-            <input type="text" placeholder="Search users by their usernames..."/>
-            <button class="primary-button">
+            <input [(ngModel)]="searchText" type="text" placeholder="Search users by their usernames..."/>
+            <button class="primary-button" (click)="searchUsers()">
                 <lucide-angular name="search" [size]="24" />
             </button>
         </div>
     </div>
-    <div class="user-view__list-container">
+    <div class="user-view__list-container" *ngIf="users.length > 0">
         <user-card
             *ngFor="let user of users"
             [user]="user"
             (clickedBefriend)="befriendUser($event)"
         />
+    </div>
+    <div class="no-element-container" *ngIf="users.length == 0">
+        <p id="title">NO USERS FOUND</p>
+        <p id="subtitle">try generating some with the simulator</p>
+        <img src="assets/no-users.png" alt="">
     </div>
 </div>

@@ -8,6 +8,7 @@ using Orleans.Utilities;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Client.SignalR;
+using Microsoft.AspNetCore.SignalR;
 using SignalR.Orleans.Core;
 
 namespace Grains
@@ -24,41 +25,18 @@ namespace Grains
         private readonly IGrainFactory _grainFactory;
         private readonly ObserverManager<IUserNotifier> _userNotifiersManager;
         private IPersistentState<ChatRoomState> _chatroomState;
-        //private readonly HubContext<ChatHub> _hubContext;
-        //private readonly ChatHub _chatHub;
-        /*private readonly List<string> _chatRoomMembers = new();
-        private readonly List<string> _messages = new();
-        private bool _isGroup = false;*/
+        
 
         public ChatRoom([PersistentState("state")] IPersistentState<ChatRoomState> chatroomState,
             IGrainFactory grainFactory, 
             ILogger<IUserNotifier> logger,
-            ILogger<ChatRoom> chatroomLogger/*,
-            HubContext<ChatHub> hubContext,
-            ChatHub chatHub*/)
+            ILogger<ChatRoom> chatroomLogger)
         {
             _logger = chatroomLogger;
             _grainFactory = grainFactory;
             _userNotifiersManager = new ObserverManager<IUserNotifier>(TimeSpan.FromMinutes(5), logger);
             _chatroomState = chatroomState;
-            //_hubContext = hubContext;
-            //_chatHub = chatHub;
         }
-
-        /*public async override Task OnActivateAsync(CancellationToken cancellationToken)
-        {
-            var chatname = _chatroomState.State.ChatName;
-            var streamProvider = this.GetStreamProvider("chat");
-            var streamId = StreamId.Create("MyStreamNamespace", chatname);
-            var stream = streamProvider.GetStream<string>(streamId);
-
-            var subscriptionHandles = await stream.GetAllSubscriptionHandles();
-            if (!subscriptionHandles.IsNullOrEmpty())
-            {
-                subscriptionHandles.ForEach(
-                    async x => await x.ResumeAsync(OnNextAsync));
-            }
-        }*/
 
         public override async Task OnActivateAsync(CancellationToken cancellationToken)
         {
@@ -221,26 +199,13 @@ namespace Grains
         {
             _chatroomState.State.Messages.Add(message);
             await _chatroomState.WriteStateAsync();
-            _logger.LogCritical("____________________________CIAO @#@#@#@#@#@#@ CIAO ======> CIAO___________________________________");
-
-            /*foreach (var notifier in _userNotifiersManager) 
-            {
-                var notiferOwner = await notifier.GetOwnerUsername();
-                if (!notiferOwner.Equals(message.AuthorUsername))
-                {
-                    await notifier.ReceiveNotification("New message!");
-                }
-            }*/
+            _logger.LogCritical("Received a new message");
+            
+            //await _chatHub.Group(this.GetPrimaryKeyString()).Send("chatRoomUpdate", message);
+            //await _chatHub.Clients.All.SendAsync("chatRoomUpdate", message);
 
             await _userNotifiersManager.Notify(notifier => notifier.ReceiveNotification("New message!"),
                                                  notifier => !notifier.GetPrimaryKeyString().Equals(message.AuthorUsername));
-
-            //if user notifier is not that one of the author
-
-            /*var msg = new InvocationMessage("ReceiveMessage", new object?[] { message });
-            await _hubContext.Group(message.ChatRoomName).Send(msg);*/
-
-            //await _hubContext.Clients.All.SendAsync("ReceiveMessage", message);
 
             await Task.CompletedTask;
         }
@@ -254,12 +219,25 @@ namespace Grains
         {
             return Task.FromResult(new ChatRoomDB(_chatroomState.State.ChatName));
         }
+        
+        public async Task<ChatPreviewDTO> GetChatRoomPreview()
+        {
+            var chatId = _chatroomState.State.ChatName;
+            var isGroup = _chatroomState.State.IsGroup;
+            var messages = _chatroomState.State.Messages;
+            UserMessage lastMessage = null;
+            if (messages.Count != 0)
+            {
+                lastMessage = messages.Last();
+            }
+            return await Task.FromResult(new ChatPreviewDTO(chatId, lastMessage, isGroup));
+        }
 
         public async Task<ChatRoomDTO> GetChatRoomStateDTO()
         {
             var chatname = _chatroomState.State.ChatName;
-            var members = _chatroomState.State.ChatRoomMembers;
-            return await Task.FromResult(new ChatRoomDTO(chatname, members));
+            var messages = _chatroomState.State.Messages;
+            return await Task.FromResult(new ChatRoomDTO(chatname, messages));
         }
 
     }
